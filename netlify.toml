@@ -1,6 +1,10 @@
-# Site estático de arquivo único (index.html).
-# Sobrescreve a config antiga do Netlify (que estava como Next.js:
-# "npm run build" -> ".next"). Aqui nao ha build: publicamos a raiz.
+# App Vite + React. O Netlify roda o build e publica a pasta "dist".
 [build]
-  command = "echo 'Site estatico - sem etapa de build'"
-  publish = "."
+  command = "npm run build"
+  publish = "dist"
+
+# SPA: qualquer rota cai no index.html (evita 404 em refresh de subrotas futuras)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

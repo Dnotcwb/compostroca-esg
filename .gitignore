@@ -1,8 +1,16 @@
+# Dependências
+node_modules
+
+# Build do Vite
+dist
+
+# Variáveis de ambiente (NUNCA commitar) — use .env.example como modelo
+.env
+.env.local
+.env.*.local
+
 # Netlify
 .netlify
-
-# Dependencias (caso futuramente seja adicionado build)
-node_modules
 
 # Sistema / editor
 .DS_Store

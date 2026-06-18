@@ -1,0 +1,2015 @@
+import React, { useState, useEffect } from 'react';
+        import L from 'leaflet';
+        import {
+          LayoutDashboard,
+          FileText,
+          Leaf,
+          Download, 
+          TrendingUp, 
+          ArrowUpRight, 
+          ShieldCheck, 
+          MapPin,
+          BarChart3,
+          LogOut,
+          Bell,
+          Plus,
+          X,
+          Minus,
+          CheckCircle2,
+          Sparkles,
+          Activity,
+          Thermometer,
+          Zap,
+          Link as LinkIcon,
+          Cpu,
+          Box,
+          Network,
+          ExternalLink,
+          Lock,
+          Tags,
+          Users,
+          Award,
+          Webhook,
+          Database,
+          Key,
+          Map,
+          Recycle,
+          Landmark,
+          FileSignature,
+          HardHat,
+          PieChart,
+          ShieldAlert,
+          ListChecks,
+          AlertTriangle,
+          Globe,
+          Target,
+          HeartHandshake,
+          Scale,
+          Droplet, Sun, Truck, Smile, Swords, Share2, DollarSign,
+          LogIn, UserCog, Edit3, Trash2, Sprout, ClipboardEdit, Save
+        } from 'lucide-react';
+
+        // --- DADOS INICIAIS MOCKADOS ---
+        const DADOS_INICIAIS = {
+          empresa: "TechCorp Solutions S.A.",
+          cnpj: "12.345.678/0001-99",
+          emissoesTotais: 1250,
+          compensado: 450,
+          cancelamentos: 15,
+          tokensCustodia: 120,
+          residuosDesviados: 450,
+          hortasPatrocinadas: 3,
+          familiasImpactadas: 142,
+          rendaGerada: "R$ 45.000",
+          pegadaHidrica: { poupada: 15400, meta: 20000 },
+          energiaRenovavel: 78,
+          fornecedores: { total: 45, auditados: 38, score: 8.5 },
+          enps: 84,
+          precificacaoCarbono: { fundo: 24500, taxaInterna: 150 },
+          departamentos: [
+            { nome: "Logística", tokens: 12.5, tendencia: "up" },
+            { nome: "Marketing", tokens: 8.2, tendencia: "up" },
+            { nome: "Operações", tokens: 5.0, tendencia: "down" }
+          ],
+          logisticaReversa: { inseridas: 1200, recuperadas: 850 },
+          social: { 
+            diasSemAcidentes: 342, 
+            diversidade: { mulheresLideranca: 45, minorias: 38 } 
+          },
+          governanca: { 
+            treinamentoEtica: 92, 
+            denuncias: { total: 24, resolvidas: 22 }, 
+            lgpd: true 
+          }
+        };
+
+        const CERTIFICADOS_INICIAIS = [
+          { id: 'CERT-2026-8891', data: '12 Mai 2026', volume: 150, projeto: 'Compostroca - Curitiba/PR', status: 'Aposentado', protocolo: 'GHG Protocol / B3' },
+          { id: 'CERT-2025-4432', data: '10 Nov 2025', volume: 200, projeto: 'Compostroca - RMC', status: 'Aposentado', protocolo: 'GHG Protocol' },
+          { id: 'CERT-2025-1102', data: '05 Mar 2025', volume: 100, projeto: 'Cesta Net Zero Paraná', status: 'Aposentado', protocolo: 'GHG Protocol' },
+        ];
+
+        // Tabela Inicial de Usuários
+        const USUARIOS_INICIAIS = [
+          { id: 1, nome: 'Equipa Root', email: 'admin@ambientelivre.com', tipo: 'Administrador', status: 'Ativo', ultimaSessao: 'Hoje, 10:15' },
+          { id: 2, nome: 'TechCorp Solutions', email: 'esg@techcorp.com', tipo: 'Patrocinador', status: 'Ativo', ultimaSessao: 'Hoje, 09:30' },
+          { id: 3, nome: 'Horta Cajuru (Comunidade)', email: 'cajuru@hortas.org', tipo: 'Produtor', status: 'Ativo', ultimaSessao: 'Ontem, 16:45' },
+          { id: 4, nome: 'Logística Global SA', email: 'sustentabilidade@logglobal.com', tipo: 'Patrocinador', status: 'Inativo', ultimaSessao: '12/04/2026' },
+          { id: 5, nome: 'Horta Boqueirão', email: 'boqueirao@hortas.org', tipo: 'Produtor', status: 'Ativo', ultimaSessao: 'Hoje, 07:15' },
+        ];
+
+        // Colaboradores da empresa patrocinadora (recebem CAU por pontuação e resgatam benefícios)
+        const COLABORADORES_INICIAIS = [
+          { id: 1, nome: 'Ana Souza', cargo: 'Logística', pontuacao: 320, saldo: 12 },
+          { id: 2, nome: 'Bruno Lima', cargo: 'Marketing', pontuacao: 280, saldo: 8 },
+          { id: 3, nome: 'Carla Dias', cargo: 'Operações', pontuacao: 450, saldo: 20 },
+          { id: 4, nome: 'Diego Alves', cargo: 'Comercial', pontuacao: 150, saldo: 4 },
+          { id: 5, nome: 'Elaine Costa', cargo: 'Recursos Humanos', pontuacao: 210, saldo: 6 },
+        ];
+
+        // --- COMPONENTES AUXILIARES ---
+        const MetricCard = ({ title, value, subtitle, icon: Icon, accentColor = "text-[#0e7a63]", highlight = false }) => (
+          <div className={`bg-[#111111] border ${highlight ? 'border-[#a78f66] shadow-[0_0_20px_rgba(167,143,102,0.1)]' : 'border-[#2a2a2a]'} p-5 md:p-6 rounded-2xl flex flex-col relative overflow-hidden group hover:border-[#3a3a3a] transition-all`}>
+            <div className="flex justify-between items-start mb-4 relative z-10">
+              <h3 className="text-gray-400 text-xs md:text-sm font-medium pr-2">{title}</h3>
+              <div className={`p-2 bg-[#1a1a1a] rounded-lg flex-shrink-0 ${accentColor}`}>
+                <Icon size={18} className="md:w-5 md:h-5" />
+              </div>
+            </div>
+            <div className="relative z-10 mt-auto">
+              <span className="text-2xl md:text-3xl font-bold text-white tracking-tight">{value}</span>
+              <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2 line-clamp-1">{subtitle}</p>
+            </div>
+            {highlight && <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-[#a78f66]/10 to-transparent pointer-events-none"></div>}
+          </div>
+        );
+
+        const ProgressBar = ({ total, compensado, cancelamentos }) => {
+          const compensadoLiquido = Math.max(0, compensado - (cancelamentos || 0));
+          const percent = Math.min((compensadoLiquido / total) * 100, 100);
+          
+          return (
+            <div className="mt-6">
+              <div className="flex justify-between text-[10px] md:text-xs mb-2">
+                <span className="text-gray-400 font-medium truncate pr-2">Progresso Net Zero (Escopos 1, 2 e 3)</span>
+                <span className="text-[#a78f66] font-bold whitespace-nowrap">{percent.toFixed(1)}% Compensado Líquido</span>
+              </div>
+              <div className="w-full bg-[#1a1a1a] rounded-full h-2.5 md:h-3 flex overflow-hidden border border-[#2a2a2a]">
+                <div 
+                  className="bg-gradient-to-r from-[#0d332d] to-[#0e7a63] h-full rounded-full relative transition-all duration-1000 ease-out"
+                  style={{ width: `${percent}%` }}
+                >
+                  <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white opacity-20 blur-sm"></div>
+                </div>
+              </div>
+              <p className="text-[9px] text-gray-600 mt-2">* Lógica aplicada: O cálculo subtrai automaticamente transações e entradas canceladas ({cancelamentos || 0} tCO₂e) dos totais brutos.</p>
+            </div>
+          );
+        };
+
+        // --- COMPONENTE DO MAPA LEAFLET INTERATIVO ---
+        const MapComponent = React.memo(({ onSelect }) => {
+            useEffect(() => {
+                const container = document.getElementById('real-map-container');
+                if (!container) return;
+
+                if (window.mapInstance) {
+                    window.mapInstance.remove();
+                    window.mapInstance = null;
+                }
+
+                const map = L.map(container, { zoomControl: false }).setView([-25.4600, -49.2700], 11);
+                window.mapInstance = map;
+                
+                L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    className: 'dark-map-tiles'
+                }).addTo(map);
+
+                const hortas = [
+                  { id: 'Cajuru', coords: [-25.4430, -49.2080], color: '#158d44', name: 'Horta Cajuru' },
+                  { id: 'Boqueirão', coords: [-25.5030, -49.2400], color: '#a78f66', name: 'Horta Boqueirão' },
+                  { id: 'Tatuquara', coords: [-25.5650, -49.3300], color: '#0e7a63', name: 'Horta Tatuquara' }
+                ];
+
+                hortas.forEach(horta => {
+                  const icon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="animate-pulse" style="background-color: ${horta.color}; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 15px ${horta.color}; border: 2px solid white; cursor: pointer;"></div>`,
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                  });
+
+                  const marker = L.marker(horta.coords, { icon }).addTo(map);
+                  
+                  marker.bindTooltip(`<div class="font-bold text-xs">${horta.name}</div>`, { 
+                      direction: 'top', 
+                      offset: [0, -10],
+                      className: 'custom-leaflet-tooltip'
+                  });
+
+                  marker.on('click', () => {
+                     onSelect(horta.id);
+                     map.setView(horta.coords, 14, { animate: true }); 
+                  });
+                });
+
+                // CORREÇÃO: Força o Leaflet a re-calcular as dimensões após a aba ser montada
+                setTimeout(() => {
+                    if (window.mapInstance) {
+                        window.mapInstance.invalidateSize();
+                    }
+                }, 300);
+
+                return () => {
+                    if (window.mapInstance) {
+                        window.mapInstance.remove();
+                        window.mapInstance = null;
+                    }
+                };
+            }, [onSelect]);
+
+            return <div id="real-map-container" className="absolute inset-0 z-0 h-full w-full"></div>;
+        }, () => true);
+
+        // --- MODAL: USUÁRIOS (CRIAR E EDITAR) ---
+        const ModalUsuario = ({ isOpen, onClose, onSave, usuarioEdicao }) => {
+            const [formData, setFormData] = useState({ nome: '', email: '', tipo: 'Patrocinador', status: 'Ativo' });
+
+            useEffect(() => {
+                if (usuarioEdicao) {
+                    setFormData(usuarioEdicao);
+                } else {
+                    setFormData({ nome: '', email: '', tipo: 'Patrocinador', status: 'Ativo' });
+                }
+            }, [usuarioEdicao, isOpen]);
+
+            if (!isOpen) return null;
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onSave(formData);
+            };
+
+            return (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center animate-fade-in">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+                    
+                    <div className="bg-[#111111] w-full md:w-[450px] rounded-3xl border border-[#2a2a2a] relative z-10 animate-scale-up flex flex-col overflow-hidden">
+                        <div className="flex justify-between items-center p-5 border-b border-[#2a2a2a] bg-[#111111]/90 backdrop-blur-md">
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-[#a78f66]/20 rounded-lg text-[#a78f66]">
+                                    {usuarioEdicao ? <Edit3 size={20} /> : <UserCog size={20} />}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white">{usuarioEdicao ? 'Editar Utilizador' : 'Novo Utilizador'}</h3>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="p-2 text-gray-400 hover:text-white bg-[#1a1a1a] rounded-full transition-colors"><X size={20} /></button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            <div>
+                                <label className="text-sm text-gray-400 font-medium block mb-2">Nome da Entidade / Organização</label>
+                                <input required type="text" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#a78f66] transition-colors" placeholder="Ex: TechCorp S.A." />
+                            </div>
+                            <div>
+                                <label className="text-sm text-gray-400 font-medium block mb-2">E-mail de Acesso</label>
+                                <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#a78f66] transition-colors" placeholder="email@empresa.com" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm text-gray-400 font-medium block mb-2">Perfil de Acesso</label>
+                                    <select value={formData.tipo} onChange={e => setFormData({...formData, tipo: e.target.value})} className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#a78f66] transition-colors appearance-none cursor-pointer">
+                                        <option value="Administrador">Administrador</option>
+                                        <option value="Patrocinador">Patrocinador</option>
+                                        <option value="Produtor">Produtor</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 font-medium block mb-2">Status</label>
+                                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#a78f66] transition-colors appearance-none cursor-pointer">
+                                        <option value="Ativo">Ativo</option>
+                                        <option value="Inativo">Inativo</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <button type="submit" className="w-full bg-[#a78f66] hover:bg-[#8c7652] text-[#050505] py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#a78f66]/10 active:scale-[0.98] flex justify-center items-center">
+                                    <Save size={18} className="mr-2"/> Guardar Configurações
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MODAL: CONFIRMAR EXCLUSÃO ---
+        const ModalConfirmarExclusao = ({ isOpen, onClose, onConfirm, userName }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center animate-fade-in">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="bg-[#111111] w-full md:w-[400px] p-6 rounded-3xl border border-[#2a2a2a] relative z-10 animate-scale-up text-center">
+                        <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-900/50">
+                            <AlertTriangle size={32} className="text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Confirmar Exclusão</h3>
+                        <p className="text-gray-400 text-sm mb-6">
+                            Tem a certeza que deseja excluir o utilizador <strong className="text-white">{userName}</strong>? Esta ação removerá o acesso ao sistema e não pode ser desfeita.
+                        </p>
+                        <div className="flex space-x-3">
+                            <button onClick={onClose} className="flex-1 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-white py-3 rounded-xl text-sm font-bold transition-colors">Cancelar</button>
+                            <button onClick={onConfirm} className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-red-900/20">Sim, Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MODAL DE BLOCKCHAIN ---
+        const ModalBlockchain = ({ isOpen, onClose }) => {
+          if (!isOpen) return null;
+
+          return (
+            <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center animate-fade-in">
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+              
+              <div className="bg-[#111111] w-full md:w-[600px] max-h-[90vh] overflow-y-auto md:rounded-3xl rounded-t-3xl border border-[#2a2a2a] relative z-10 animate-scale-up flex flex-col pb-safe">
+                
+                <div className="flex justify-between items-center p-5 border-b border-[#2a2a2a] sticky top-0 bg-[#111111]/90 backdrop-blur-md z-20">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-[#0e7a63]/20 rounded-lg">
+                      <Network size={20} className="text-[#0e7a63]" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Ledger de Sustentabilidade</h3>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">Rede Polygon (Carbon-Neutral)</p>
+                    </div>
+                  </div>
+                  <button onClick={onClose} className="p-2 text-gray-400 hover:text-white bg-[#1a1a1a] rounded-full transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-5 md:p-8 space-y-8">
+                  <div className="bg-[#0a0a0a] border border-[#222] rounded-xl p-4 font-mono text-[10px] md:text-xs text-gray-400 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span>Smart Contract:</span>
+                      <a href="https://polygonscan.com/" target="_blank" rel="noopener noreferrer" className="text-[#a78f66] flex items-center hover:text-white transition-colors">
+                        0x8f3c...b9a4 <ExternalLink size={12} className="ml-1" />
+                      </a>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Padrão do Token:</span>
+                      <span className="text-white">ERC-1155 (Semi-Fungible)</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Validador Oracle:</span>
+                      <span className="text-[#158d44] flex items-center">
+                        <Lock size={12} className="mr-1" /> Compostroca IoT Node
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative border-l border-[#2a2a2a] ml-4 md:ml-6 space-y-8 pb-4">
+                    <div className="relative pl-6 md:pl-8">
+                      <div className="absolute -left-[17px] top-1 bg-[#1a1a1a] border border-[#333] w-8 h-8 rounded-full flex items-center justify-center z-10">
+                        <MapPin size={14} className="text-gray-400" />
+                      </div>
+                      <h4 className="text-sm font-bold text-white">1. Geração do Resíduo e Recolha</h4>
+                      <p className="text-xs text-gray-500 mt-1">1.2t de resíduo orgânico originado da comunidade local.</p>
+                      <div className="mt-2 bg-[#161616] border border-[#222] rounded-lg p-2 inline-block font-mono text-[10px] text-gray-400">
+                        Hash Local: <span className="text-gray-300">b4a7...99f1</span>
+                      </div>
+                    </div>
+
+                    <div className="relative pl-6 md:pl-8">
+                      <div className="absolute -left-[17px] top-1 bg-[#0d332d] border border-[#0e7a63] w-8 h-8 rounded-full flex items-center justify-center z-10">
+                        <Cpu size={14} className="text-[#0e7a63]" />
+                      </div>
+                      <h4 className="text-sm font-bold text-white">2. Processamento (Compostagem)</h4>
+                      <p className="text-xs text-gray-500 mt-1">Telemetria de sensores registou temperatura ideal &gt;60°C por 14 dias.</p>
+                      <div className="mt-2 bg-[#161616] border border-[#222] rounded-lg p-2 inline-block font-mono text-[10px] text-gray-400">
+                        Evitados: <span className="text-red-400">0.8t CH₄</span> | Gerados: <span className="text-[#158d44]">0.4t Adubo</span>
+                      </div>
+                    </div>
+
+                    <div className="relative pl-6 md:pl-8">
+                      <div className="absolute -left-[17px] top-1 bg-[#1a1a1a] border border-[#a78f66] w-8 h-8 rounded-full flex items-center justify-center z-10">
+                        <Box size={14} className="text-[#a78f66]" />
+                      </div>
+                      <h4 className="text-sm font-bold text-[#a78f66]">3. Emissão do Token (Minting)</h4>
+                      <p className="text-xs text-gray-500 mt-1">Oráculo confirmou mitigação. 1 Token CAU = 1 tCO₂e emitido no ledger.</p>
+                      <div className="mt-2 bg-[#161616] border border-[#222] rounded-lg p-2 inline-flex items-center space-x-2 font-mono text-[10px]">
+                        <span className="text-gray-400">TxID:</span>
+                        <a href="https://polygonscan.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 flex items-center transition-colors">
+                          0x44fcb2...88dd1a <ExternalLink size={10} className="ml-1" />
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="relative pl-6 md:pl-8">
+                      <div className="absolute -left-[17px] top-1 bg-[#158d44] border border-[#1b9e4f] w-8 h-8 rounded-full flex items-center justify-center z-10 shadow-[0_0_15px_rgba(21,141,68,0.4)]">
+                        <CheckCircle2 size={16} className="text-white" />
+                      </div>
+                      <h4 className="text-sm font-bold text-white">4. Status do Ativo: Patrocínio Ativo</h4>
+                      <p className="text-xs text-gray-500 mt-1">CAU de patrocínio registrado em nome da TechCorp Solutions S.A.</p>
+                      <div className="mt-3 flex items-center text-[10px] text-[#158d44] bg-[#158d44]/10 border border-[#158d44]/20 px-3 py-1.5 rounded-full w-fit font-bold tracking-wider uppercase">
+                        <ShieldCheck size={12} className="mr-1.5" />
+                        Auditado e Verificado
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 border-t border-[#2a2a2a] bg-[#0a0a0a] rounded-b-3xl">
+                  <a 
+                    href="https://polygonscan.com/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="w-full bg-[#1a1a1a] hover:bg-[#222] text-white py-3.5 rounded-xl font-bold text-sm transition-all border border-[#333] flex justify-center items-center"
+                  >
+                    <LinkIcon size={16} className="mr-2 text-gray-400" />
+                    Visualizar no Polygonscan Explorer
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // --- MODAL DE PATROCÍNIO (AQUISIÇÃO DE CAU PARA APOIAR O PROJETO) ---
+        const ModalAquisicao = ({ isOpen, onClose, onConfirm }) => {
+          const [quantidade, setQuantidade] = useState(10);
+          const [finalidade, setFinalidade] = useState('aposentar');
+          const precoBase = 500; 
+          
+          if (!isOpen) return null;
+
+          const total = quantidade * precoBase;
+          
+          const handleConfirmar = () => {
+            onConfirm({ quantidade, finalidade, total });
+            setQuantidade(10);
+            setFinalidade('aposentar');
+          };
+
+          return (
+            <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center animate-fade-in">
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+              
+              <div className="bg-[#111111] w-full md:w-[500px] max-h-[90vh] overflow-y-auto md:rounded-3xl rounded-t-3xl border border-[#2a2a2a] relative z-10 animate-scale-up flex flex-col pb-safe">
+                <div className="flex justify-between items-center p-5 border-b border-[#2a2a2a] sticky top-0 bg-[#111111]/90 backdrop-blur-md z-20">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Patrocinar o Projeto</h3>
+                    <p className="text-xs text-[#a78f66]">Aquisição de CAU · Projeto Compostroca</p>
+                  </div>
+                  <button onClick={onClose} className="p-2 text-gray-400 hover:text-white bg-[#1a1a1a] rounded-full transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-5 md:p-6 space-y-6">
+                  <div className="bg-[#161616] p-5 rounded-2xl border border-[#222]">
+                    <label className="text-sm text-gray-400 font-medium mb-4 block">Quantidade de Impacto (tCO₂e)</label>
+                    <div className="flex items-center justify-between bg-[#0a0a0a] rounded-xl border border-[#333] p-1">
+                      <button onClick={() => quantidade > 1 && setQuantidade(quantidade - 1)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition-colors active:scale-95 disabled:opacity-50" disabled={quantidade <= 1}>
+                        <Minus size={20} />
+                      </button>
+                      <div className="flex flex-col items-center">
+                        <span className="font-bold text-2xl text-white">{quantidade}</span>
+                        <span className="text-[10px] text-gray-500 uppercase tracking-widest">Tokens</span>
+                      </div>
+                      <button onClick={() => setQuantidade(quantidade + 1)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition-colors active:scale-95">
+                        <Plus size={20} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 font-medium mb-3 flex items-center">
+                      <ShieldCheck size={16} className="mr-2 text-[#a78f66]" /> Destinação do CAU
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={() => setFinalidade('aposentar')} className={`p-4 rounded-xl text-left border transition-all flex flex-col gap-1 ${finalidade === 'aposentar' ? 'bg-[#0d332d]/40 border-[#0e7a63] text-white shadow-[0_0_15px_rgba(14,122,99,0.15)]' : 'bg-[#161616] border-[#222] text-gray-400 hover:bg-[#1a1a1a]'}`}>
+                        <span className="font-semibold text-sm">Aposentar Token</span>
+                        <span className="text-[10px] leading-tight opacity-70">Consumir para relatório de neutralização GHG/B3.</span>
+                      </button>
+                      <button onClick={() => setFinalidade('recompensas')} className={`p-4 rounded-xl text-left border transition-all flex flex-col gap-1 ${finalidade === 'recompensas' ? 'bg-[#a78f66]/20 border-[#a78f66] text-white shadow-[0_0_15px_rgba(167,143,102,0.1)]' : 'bg-[#161616] border-[#222] text-gray-400 hover:bg-[#1a1a1a]'}`}>
+                        <span className="font-semibold text-sm">Recompensas (Equipa)</span>
+                        <span className="text-[10px] leading-tight opacity-70">Disponibilizar como benefício para os colaboradores.</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#0a0a0a] to-[#111111] p-4 rounded-xl border border-[#2a2a2a]">
+                    <div className="flex justify-between text-sm mb-2 text-gray-400">
+                      <span>Valor por Token:</span>
+                      <span>R$ {precoBase.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-4 text-gray-400">
+                      <span>Taxa da Plataforma (0% na compra):</span>
+                      <span>R$ 0,00</span>
+                    </div>
+                    <div className="flex justify-between items-end border-t border-[#222] pt-4 mt-2">
+                      <span className="text-gray-300 font-medium">Total a faturar:</span>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold text-white block">
+                          {(total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        <span className="text-[10px] text-gray-500">Cobrança incluída na próxima fatura</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 border-t border-[#2a2a2a] bg-[#0a0a0a] rounded-b-3xl">
+                  <button onClick={handleConfirmar} className="w-full bg-[#0e7a63] hover:bg-[#158d44] text-white py-4 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#0e7a63]/20 active:scale-[0.98] flex justify-center items-center">
+                    Confirmar Patrocínio
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // --- APLICATIVO PRINCIPAL ---
+        function App() {
+          const [user, setUser] = useState(null); 
+          const [activeTab, setActiveTab] = useState('visao-geral'); 
+          const [dados, setDados] = useState(DADOS_INICIAIS);
+          const [certificados, setCertificados] = useState(CERTIFICADOS_INICIAIS);
+          
+          // Estado de Usuários para CRUD
+          const [usuariosLista, setUsuariosLista] = useState(USUARIOS_INICIAIS);
+
+          // Colaboradores da empresa + quantidade a distribuir por pontuação
+          const [colaboradores, setColaboradores] = useState(COLABORADORES_INICIAIS);
+          const [qtdDistribuir, setQtdDistribuir] = useState('');
+          
+          // Estados UI Modais
+          const [modalAberto, setModalAberto] = useState(false);
+          const [modalBlockchainAberto, setModalBlockchainAberto] = useState(false);
+          
+          // Estados UI CRUD Usuários
+          const [modalUserAberto, setModalUserAberto] = useState(false);
+          const [userEmEdicao, setUserEmEdicao] = useState(null);
+          const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false);
+          const [userParaExcluir, setUserParaExcluir] = useState(null);
+          
+          const [notificacao, setNotificacao] = useState(null);
+          const [hortaSelecionada, setHortaSelecionada] = useState(null);
+          const [iotTemp, setIotTemp] = useState(62);
+          
+          useEffect(() => {
+            const interval = setInterval(() => {
+              setIotTemp(prev => Math.max(60, Math.min(65, prev + (Math.random() > 0.5 ? 0.5 : -0.5))));
+            }, 3000);
+            return () => clearInterval(interval);
+          }, []);
+
+          const handleLogin = (role, name, extra = {}) => {
+            setUser({ role, name, ...extra });
+            if (role === 'admin') setActiveTab('visao-geral');
+            else if (role === 'producer') setActiveTab('visao-horta');
+            else if (role === 'colaborador') setActiveTab('beneficios');
+            else setActiveTab('visao-geral');
+          };
+
+          const handleLogout = () => {
+            setUser(null);
+          };
+
+          const showNotificacao = (titulo, mensagem) => {
+            setNotificacao({ titulo, mensagem });
+            setTimeout(() => setNotificacao(null), 4000);
+          }
+
+          // Ações CRUD Usuários
+          const abrirModalNovoUsuario = () => {
+             setUserEmEdicao(null);
+             setModalUserAberto(true);
+          };
+
+          const abrirModalEditarUsuario = (u) => {
+             setUserEmEdicao(u);
+             setModalUserAberto(true);
+          };
+
+          const confirmarExclusao = (u) => {
+             setUserParaExcluir(u);
+             setModalExclusaoAberto(true);
+          };
+
+          const executarExclusao = () => {
+             setUsuariosLista(prev => prev.filter(u => u.id !== userParaExcluir.id));
+             setModalExclusaoAberto(false);
+             setUserParaExcluir(null);
+             showNotificacao('Utilizador Removido', 'O acesso foi revogado com sucesso do sistema.');
+          };
+
+          const salvarUsuario = (dadosForm) => {
+             if (userEmEdicao) {
+                 // Editar
+                 setUsuariosLista(prev => prev.map(u => u.id === userEmEdicao.id ? { ...u, ...dadosForm } : u));
+                 showNotificacao('Perfil Atualizado', 'As configurações do utilizador foram guardadas.');
+             } else {
+                 // Criar
+                 const novoId = Math.max(...usuariosLista.map(u => u.id), 0) + 1;
+                 setUsuariosLista(prev => [...prev, { ...dadosForm, id: novoId, ultimaSessao: 'Acesso Pendente' }]);
+                 showNotificacao('Novo Acesso Criado', 'As credenciais foram enviadas para o e-mail do parceiro.');
+             }
+             setModalUserAberto(false);
+             setUserEmEdicao(null);
+          };
+
+          // Ações Negócio
+          const processarCompra = ({ quantidade, finalidade }) => {
+            setModalAberto(false);
+            setDados(prev => {
+              const novosDados = { ...prev };
+              if (finalidade === 'aposentar') {
+                novosDados.compensado += quantidade;
+              } else {
+                novosDados.tokensCustodia += quantidade;
+              }
+              novosDados.residuosDesviados += Math.floor(quantidade * 1.2); 
+              return novosDados;
+            });
+
+            if (finalidade === 'aposentar') {
+              const novoId = `CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+              const dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+              setCertificados(prev => [
+                { id: novoId, data: dataAtual, volume: quantidade, projeto: 'Cesta Net Zero', status: 'Aposentado', protocolo: 'GHG Protocol / B3' },
+                ...prev
+              ]);
+            }
+
+            showNotificacao('Patrocínio Confirmado', `${quantidade} CAU de patrocínio registrados.`);
+          };
+
+          // Distribui CAU do patrocínio entre os colaboradores proporcionalmente à pontuação
+          const distribuirPorPontuacao = () => {
+             const qtd = parseInt(qtdDistribuir, 10);
+             if (!qtd || qtd < 1) {
+                showNotificacao('Quantidade inválida', 'Informe quantos CAU deseja distribuir.');
+                return;
+             }
+             if (qtd > (dados.tokensCustodia || 0)) {
+                showNotificacao('Saldo insuficiente', `Você possui apenas ${dados.tokensCustodia || 0} CAU para distribuir.`);
+                return;
+             }
+             const totalPontos = colaboradores.reduce((s, c) => s + (c.pontuacao || 0), 0);
+             if (totalPontos <= 0) {
+                showNotificacao('Sem pontuação', 'Os colaboradores não possuem pontuação registrada.');
+                return;
+             }
+             let distribuido = 0;
+             const novos = colaboradores.map(c => {
+                const aloc = Math.floor(qtd * (c.pontuacao || 0) / totalPontos);
+                distribuido += aloc;
+                return { ...c, saldo: (c.saldo || 0) + aloc };
+             });
+             setColaboradores(novos);
+             setDados(prev => ({ ...prev, tokensCustodia: (prev.tokensCustodia || 0) - distribuido }));
+             setQtdDistribuir('');
+             showNotificacao('Distribuição concluída', `${distribuido} CAU distribuídos entre ${colaboradores.length} colaboradores por pontuação.`);
+          };
+
+          // Resgate de benefício pelo colaborador (debita o saldo do próprio colaborador)
+          const resgatarBeneficio = (item) => {
+             const colab = colaboradores.find(c => c.id === user.colaboradorId);
+             if (!colab || (colab.saldo || 0) < item.custo) {
+                showNotificacao('Saldo insuficiente', `São necessários ${item.custo} CAU para resgatar "${item.nome}".`);
+                return;
+             }
+             setColaboradores(prev => prev.map(c => c.id === user.colaboradorId ? { ...c, saldo: c.saldo - item.custo } : c));
+             showNotificacao('Resgate solicitado', `"${item.nome}" resgatado por ${item.custo} CAU.`);
+          };
+
+          const darRecompensa = (nome) => {
+             if(dados.tokensCustodia < 1) {
+                showNotificacao('Saldo Insuficiente', `Precisa ter CAU de patrocínio disponíveis para recompensar.`);
+                return;
+             }
+             setDados(prev => ({ ...prev, tokensCustodia: prev.tokensCustodia - 1 }));
+             showNotificacao('Recompensa Enviada!', `1 CAU enviado como benefício para ${nome}.`);
+          };
+
+          const gerarRelatorioGlobal = () => {
+             showNotificacao('Relatório em Consolidação', 'O relatório oficial GRI/ISE está a ser gerado para auditoria. Irá recebê-lo por e-mail.');
+          };
+
+          const colabAtual = (user && user.role === 'colaborador') ? colaboradores.find(c => c.id === user.colaboradorId) : null;
+          const compensadoLiquido = Math.max(0, dados.compensado - (dados.cancelamentos || 0));
+          const saldoDevedorLiquido = Math.max(0, dados.emissoesTotais - compensadoLiquido);
+
+          const renderTabelaUsuarios = (titulo, tipoFiltro, corIcone, bgIcone, Icone) => {
+            const filtrados = usuariosLista.filter(u => u.tipo === tipoFiltro);
+            if (filtrados.length === 0) return null;
+            
+            return (
+                <div className="mb-8">
+                    <h3 className="font-bold text-white mb-4 flex items-center">
+                        <Icone size={18} className={`mr-2 ${corIcone}`} /> {titulo}
+                    </h3>
+                    <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl overflow-hidden relative shadow-lg">
+                        <div className="overflow-x-auto hide-scrollbar">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                              <thead>
+                                <tr className="bg-[#1a1a1a] border-b border-[#2a2a2a] text-xs uppercase tracking-wider text-gray-400">
+                                  <th className="p-4 font-semibold">Nome / Organização</th>
+                                  <th className="p-4 font-semibold">E-mail de Acesso</th>
+                                  <th className="p-4 font-semibold">Status</th>
+                                  <th className="p-4 font-semibold">Último Acesso</th>
+                                  <th className="p-4 font-semibold text-right">Ações</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#1a1a1a]">
+                                {filtrados.map((u) => (
+                                  <tr key={u.id} className="hover:bg-[#161616] transition-colors group">
+                                    <td className="p-4 font-medium text-white flex items-center">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${bgIcone} ${corIcone}`}>
+                                        <Icone size={14} />
+                                      </div>
+                                      {u.nome}
+                                    </td>
+                                    <td className="p-4 text-sm text-gray-400">{u.email}</td>
+                                    <td className="p-4">
+                                      <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider ${u.status === 'Ativo' ? 'bg-[#158d44]/10 text-[#158d44] border border-[#158d44]/30' : 'bg-red-900/20 text-red-400 border border-red-900/30'}`}>
+                                        {u.status}
+                                      </span>
+                                    </td>
+                                    <td className="p-4 text-sm text-gray-500">{u.ultimaSessao}</td>
+                                    <td className="p-4 text-right flex justify-end space-x-2">
+                                      <button onClick={() => abrirModalEditarUsuario(u)} className="p-2 bg-[#222] hover:bg-[#333] text-gray-400 hover:text-white rounded-lg transition-colors"><Edit3 size={14} /></button>
+                                      <button onClick={() => confirmarExclusao(u)} className="p-2 bg-red-900/20 hover:bg-red-900/40 text-red-500 hover:text-red-400 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+          };
+
+          // --- TELA DE LOGIN ---
+          if (!user) {
+            return (
+              <div className="min-h-[100dvh] w-full flex items-center justify-center bg-[#050505] relative overflow-hidden">
+                <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-[#0e7a63] opacity-20 blur-[120px] rounded-full pointer-events-none"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-[#a78f66] opacity-10 blur-[120px] rounded-full pointer-events-none"></div>
+
+                <div className="bg-[#111111] border border-[#2a2a2a] p-8 md:p-12 rounded-3xl w-[90%] max-w-md relative z-10 shadow-2xl animate-scale-up">
+                  <div className="flex flex-col items-center justify-center mb-8">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#0d332d] to-[#0e7a63] rounded-2xl flex items-center justify-center shadow-lg shadow-[#0e7a63]/20 mb-4">
+                      <Leaf size={32} className="text-white" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-white text-center" style={{ fontFamily: 'serif' }}>Ambiente Livre</h1>
+                    <p className="text-[#a78f66] text-xs uppercase tracking-widest font-bold mt-2">Plataforma Global ESG</p>
+                  </div>
+
+                  <p className="text-gray-400 text-sm text-center mb-8">Selecione o seu perfil de acesso para entrar no sistema.</p>
+
+                  <div className="space-y-4">
+                    <button onClick={() => handleLogin('admin', 'Administrador')} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#a78f66] rounded-xl transition-all group">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-[#a78f66]/20 rounded-lg text-[#a78f66]"><Lock size={20} /></div>
+                        <div className="text-left">
+                          <h3 className="text-white font-bold text-sm group-hover:text-[#a78f66] transition-colors">Acesso Admin</h3>
+                          <p className="text-[10px] text-gray-500">Gestão global e aprovações</p>
+                        </div>
+                      </div>
+                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#a78f66]" />
+                    </button>
+
+                    <button onClick={() => handleLogin('sponsor', 'TechCorp Solutions S.A.')} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#0e7a63] rounded-xl transition-all group">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-[#0e7a63]/20 rounded-lg text-[#0e7a63]"><Globe size={20} /></div>
+                        <div className="text-left">
+                          <h3 className="text-white font-bold text-sm group-hover:text-[#0e7a63] transition-colors">Empresa Patrocinadora</h3>
+                          <p className="text-[10px] text-gray-500">Dashboard ESG e Patrocínio</p>
+                        </div>
+                      </div>
+                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#0e7a63]" />
+                    </button>
+
+                    <button onClick={() => handleLogin('producer', 'Horta Comunitária Cajuru')} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#158d44] rounded-xl transition-all group">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-[#158d44]/20 rounded-lg text-[#158d44]"><Sprout size={20} /></div>
+                        <div className="text-left">
+                          <h3 className="text-white font-bold text-sm group-hover:text-[#158d44] transition-colors">Produtor / Horta</h3>
+                          <p className="text-[10px] text-gray-500">Lançamento de métricas locais</p>
+                        </div>
+                      </div>
+                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#158d44]" />
+                    </button>
+
+                    <button onClick={() => handleLogin('colaborador', 'Ana Souza', { colaboradorId: 1, empresa: 'TechCorp Solutions S.A.' })} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#a78f66] rounded-xl transition-all group">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-[#a78f66]/20 rounded-lg text-[#a78f66]"><Smile size={20} /></div>
+                        <div className="text-left">
+                          <h3 className="text-white font-bold text-sm group-hover:text-[#a78f66] transition-colors">Colaborador</h3>
+                          <p className="text-[10px] text-gray-500">Resgate de benefícios CAU</p>
+                        </div>
+                      </div>
+                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#a78f66]" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // --- ESTRUTURA DO DASHBOARD (LOGADO) ---
+          return (
+            <div className="h-[100dvh] w-full flex bg-[#050505]">
+              
+              {/* NOTIFICAÇÃO TOAST */}
+              {notificacao && (
+                <div className="fixed top-20 md:top-6 right-4 md:right-8 z-[110] bg-[#158d44] text-white px-4 md:px-6 py-3 md:py-4 rounded-xl shadow-[0_10px_40px_rgba(21,141,68,0.3)] flex items-start space-x-3 animate-slide-down border border-[#1b9e4f]">
+                  <CheckCircle2 size={24} className="flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-sm">{notificacao.titulo}</h4>
+                    <p className="text-xs text-white/90 mt-1">{notificacao.mensagem}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* MODAIS GERAIS (Para Admin/Sponsor) */}
+              {user.role !== 'producer' && (
+                <ModalAquisicao isOpen={modalAberto} onClose={() => setModalAberto(false)} onConfirm={processarCompra} />
+              )}
+              
+              {/* MODAIS DE GESTÃO DE UTILIZADORES (Admin) */}
+              {user.role === 'admin' && (
+                <>
+                  <ModalUsuario isOpen={modalUserAberto} onClose={() => setModalUserAberto(false)} onSave={salvarUsuario} usuarioEdicao={userEmEdicao} />
+                  <ModalConfirmarExclusao isOpen={modalExclusaoAberto} onClose={() => setModalExclusaoAberto(false)} onConfirm={executarExclusao} userName={userParaExcluir?.nome} />
+                </>
+              )}
+              
+              {/* SIDEBAR (Desktop) */}
+              <aside className="w-64 bg-[#0a0a0a] border-r border-[#1a1a1a] hidden md:flex flex-col flex-shrink-0 z-50">
+                <div className="p-6 border-b border-[#1a1a1a]">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-[#0d332d] to-[#0e7a63] rounded-md flex items-center justify-center shadow-lg shadow-[#0e7a63]/20">
+                      <Leaf size={18} className="text-white" />
+                    </div>
+                    <div>
+                      <h1 className="font-bold text-white leading-none tracking-wide text-lg truncate" style={{ fontFamily: 'serif' }}>{user.role === 'admin' ? 'Admin Global' : user.role === 'producer' ? 'Portal da Horta' : 'Ambiente Livre'}</h1>
+                      <span className="text-[10px] text-[#a78f66] tracking-widest uppercase font-semibold">
+                        {user.role === 'admin' ? 'Controle' : user.role === 'producer' ? 'Operador' : 'ESG Enterprise'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto hide-scrollbar">
+                  
+                  {/* MENUS ESPECÍFICOS DO ADMIN */}
+                  {user.role === 'admin' && (
+                    <>
+                      <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-2 px-4">Administração</div>
+                      <button onClick={() => setActiveTab('visao-geral')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'visao-geral' ? 'bg-[#111111] text-[#0e7a63] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <LayoutDashboard size={18} />
+                        <span>Visão Global (Sponsors)</span>
+                      </button>
+                    </>
+                  )}
+
+                  {/* MENUS ESPECÍFICOS DO PRODUTOR (HORTA) */}
+                  {user.role === 'producer' && (
+                    <>
+                      <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-2 px-4">Minha Produção</div>
+                      <button onClick={() => setActiveTab('visao-horta')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'visao-horta' ? 'bg-[#111111] text-[#158d44] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Sprout size={18} />
+                        <span>Painel da Horta</span>
+                      </button>
+                      <button onClick={() => setActiveTab('registrar-dados')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'registrar-dados' ? 'bg-[#111111] text-[#a78f66] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <ClipboardEdit size={18} />
+                        <span>Lançar Dados Diários</span>
+                      </button>
+                    </>
+                  )}
+
+                  {/* MENUS DO COLABORADOR */}
+                  {user.role === 'colaborador' && (
+                    <>
+                      <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-2 px-4">Meus Benefícios</div>
+                      <button onClick={() => setActiveTab('beneficios')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'beneficios' ? 'bg-[#111111] text-[#a78f66] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Award size={18} />
+                        <span>Resgatar Benefícios</span>
+                      </button>
+                    </>
+                  )}
+
+                  {/* MENUS DO SPONSOR (E ADMIN) */}
+                  {(user.role === 'sponsor' || user.role === 'admin') && (
+                    <>
+                      {user.role !== 'admin' && (
+                        <>
+                          <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Ambiental (E)</div>
+                          <button onClick={() => setActiveTab('visao-geral')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'visao-geral' ? 'bg-[#111111] text-[#0e7a63] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                            <LayoutDashboard size={18} />
+                            <span>Visão Geral</span>
+                          </button>
+                        </>
+                      )}
+                      
+                      {user.role === 'admin' && <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Ambiental (E)</div>}
+                      
+                      <button onClick={() => setActiveTab('mapa-hortas')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'mapa-hortas' ? 'bg-[#111111] text-[#0e7a63] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Map size={18} />
+                        <span>Mapa de Impacto</span>
+                      </button>
+                      <button onClick={() => setActiveTab('impacto-duplo')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'impacto-duplo' ? 'bg-[#111111] text-[#a78f66] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Globe size={18} />
+                        <span>Impacto Duplo & ODS</span>
+                      </button>
+
+                      <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Social (S)</div>
+                      <button onClick={() => setActiveTab('social')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'social' ? 'bg-[#111111] text-[#158d44] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <HeartHandshake size={18} />
+                        <span>Social Corporativo</span>
+                      </button>
+                      <button onClick={() => setActiveTab('engajamento')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'engajamento' ? 'bg-[#111111] text-[#158d44] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Users size={18} />
+                        <span>Equipa & B2B2C</span>
+                      </button>
+
+                      <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Governança (G)</div>
+                      <button onClick={() => setActiveTab('governanca')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'governanca' ? 'bg-[#111111] text-white border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Landmark size={18} />
+                        <span>Compliance & LGPD</span>
+                      </button>
+                      <button onClick={() => setActiveTab('certificados')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'certificados' ? 'bg-[#111111] text-[#a78f66] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <ShieldCheck size={18} />
+                        <span>Certificados (Ledger)</span>
+                      </button>
+
+                      <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Operações</div>
+                      <button onClick={() => setActiveTab('beneficios')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'beneficios' ? 'bg-[#111111] text-white border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Award size={18} />
+                        <span>Benefícios CAU</span>
+                      </button>
+                      <button onClick={() => setActiveTab('integracoes')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'integracoes' ? 'bg-[#111111] text-[#a78f66] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Webhook size={18} />
+                        <span>Integrações (API)</span>
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* SECÇÃO EXCLUSIVA DE CONFIGURAÇÃO (NOVO POSICIONAMENTO) */}
+                  {user.role === 'admin' && (
+                    <>
+                      <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Configuração</div>
+                      <button onClick={() => setActiveTab('gestao-usuarios')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'gestao-usuarios' ? 'bg-[#111111] text-[#a78f66] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <UserCog size={18} />
+                        <span>Gestão de Utilizadores</span>
+                      </button>
+                    </>
+                  )}
+                </nav>
+
+                <div className="p-4 border-t border-[#1a1a1a]">
+                  <button onClick={handleLogout} className="flex items-center space-x-3 text-gray-500 hover:text-white transition-colors px-4 py-2 text-sm w-full">
+                    <LogOut size={18} />
+                    <span>Sair da Sessão</span>
+                  </button>
+                </div>
+              </aside>
+
+              {/* ÁREA PRINCIPAL */}
+              <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                
+                {/* HEADER TOP */}
+                <header className="min-h-[4rem] md:h-20 border-b border-[#1a1a1a] bg-[#0a0a0a]/90 backdrop-blur-md flex flex-row items-center justify-between px-4 md:px-8 sticky top-0 z-40 w-full shrink-0">
+                  <div className="flex flex-col justify-center max-w-[50%]">
+                    <h2 className="text-sm md:text-xl font-bold text-white truncate flex items-center">
+                        {user.name} 
+                        {user.role === 'admin' && <span className="ml-3 bg-[#a78f66]/20 text-[#a78f66] text-[10px] px-2 py-0.5 rounded font-bold uppercase">Root</span>}
+                    </h2>
+                    <p className="text-[10px] md:text-xs text-gray-500 truncate mt-0.5">
+                      {user.role === 'sponsor' ? `CNPJ: ${dados.cnpj}` : user.role === 'producer' ? 'Permissão: Edição de Dados Locais' : user.role === 'colaborador' ? `Colaborador · ${user.empresa || ''}` : 'Acesso Total ao Sistema'}
+                    </p>
+                  </div>
+                  
+                  {/* AÇÕES DO HEADER BASEADO NO PERFIL */}
+                  <div className="flex items-center space-x-2 md:space-x-4">
+                    {(user.role === 'sponsor' || user.role === 'admin') && (
+                      <button onClick={() => setModalAberto(true)} className="bg-[#0e7a63] hover:bg-[#158d44] text-white p-2 md:px-4 md:py-2 rounded-lg text-sm font-semibold flex items-center justify-center transition-all shadow-lg active:scale-95">
+                        <Plus size={18} className="md:mr-2" />
+                        <span className="hidden lg:inline">Patrocinar</span>
+                      </button>
+                    )}
+                  </div>
+                </header>
+
+                {/* CONTEÚDO SCROLLÁVEL */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 md:pb-12 scroll-smooth w-full relative z-20">
+                  <div className="max-w-6xl mx-auto space-y-6 md:space-y-8 w-full">
+                    
+                    {/* --- ABA EXCLUSIVA DO ADMIN: GESTÃO DE USUÁRIOS --- */}
+                    {activeTab === 'gestao-usuarios' && user.role === 'admin' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-6">
+                          <div>
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Gestão de Utilizadores</h2>
+                            <p className="text-gray-400 text-xs md:text-sm">Controle de acessos e configurações dos perfis da plataforma.</p>
+                          </div>
+                          <button onClick={abrirModalNovoUsuario} className="bg-[#0e7a63] hover:bg-[#158d44] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center transition-colors shadow-lg shadow-[#0e7a63]/20 active:scale-95">
+                             <Plus size={16} className="mr-2" /> Criar Novo Perfil
+                          </button>
+                        </div>
+
+                        {/* RENDERIZAÇÃO SEPARADA POR PERFIS */}
+                        {renderTabelaUsuarios("Administradores do Sistema", "Administrador", "text-[#a78f66]", "bg-[#a78f66]/20", ShieldCheck)}
+                        {renderTabelaUsuarios("Empresas Patrocinadoras (Sponsors)", "Patrocinador", "text-blue-400", "bg-blue-900/30", Globe)}
+                        {renderTabelaUsuarios("Produtores Locais (Hortas)", "Produtor", "text-[#158d44]", "bg-[#158d44]/20", Sprout)}
+                        
+                      </div>
+                    )}
+
+                    {/* --- ABAS EXCLUSIVAS DO PRODUTOR (HORTA) --- */}
+                    {activeTab === 'visao-horta' && user.role === 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="mb-6">
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Painel da {user.name}</h2>
+                            <p className="text-gray-400 text-xs md:text-sm">Resumo do impacto local gerado pela sua comunidade.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <MetricCard title="Resíduo Recebido" value="45.2 t" subtitle="Volume orgânico processado no ano" icon={Recycle} accentColor="text-[#158d44]" />
+                            <MetricCard title="Adubo Gerado" value="12.8 t" subtitle="Pronto para plantio" icon={Leaf} accentColor="text-[#a78f66]" />
+                            <MetricCard title="Patrocinadores Ativos" value="3" subtitle="Empresas conectadas ao seu projeto" icon={HeartHandshake} accentColor="text-blue-400" />
+                        </div>
+                        <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl p-6">
+                           <h3 className="font-bold text-white mb-4">Empresas que apoiam esta horta</h3>
+                           <div className="space-y-3">
+                              <div className="bg-[#161616] p-4 rounded-xl border border-[#222] flex justify-between items-center">
+                                 <div><p className="font-bold text-white text-sm">TechCorp Solutions S.A.</p><p className="text-[10px] text-gray-500">Financiou 150 CAUs este ano.</p></div>
+                                 <span className="text-xs font-bold text-[#158d44] bg-[#158d44]/10 px-2 py-1 rounded">Ativo</span>
+                              </div>
+                              <div className="bg-[#161616] p-4 rounded-xl border border-[#222] flex justify-between items-center">
+                                 <div><p className="font-bold text-white text-sm">Logística Global SA</p><p className="text-[10px] text-gray-500">Apoio em infraestrutura e ferramentas.</p></div>
+                                 <span className="text-xs font-bold text-[#158d44] bg-[#158d44]/10 px-2 py-1 rounded">Ativo</span>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'registrar-dados' && user.role === 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="max-w-2xl mx-auto bg-[#111111] border border-[#2a2a2a] p-6 md:p-8 rounded-2xl shadow-xl">
+                            <div className="flex items-center space-x-3 mb-6 pb-6 border-b border-[#222]">
+                                <div className="p-3 bg-[#a78f66]/20 rounded-xl text-[#a78f66]"><ClipboardEdit size={24} /></div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Lançamento Diário</h2>
+                                    <p className="text-xs text-gray-400">Insira os dados coletados hoje na horta.</p>
+                                </div>
+                            </div>
+                            
+                            <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); showNotificacao('Dados Registados!', 'As informações foram enviadas para validação da rede e oráculos IoT.'); e.target.reset(); }}>
+                                <div>
+                                    <label className="text-sm text-gray-400 font-medium block mb-2">Peso do Resíduo Orgânico Recebido (Kg)</label>
+                                    <input type="number" required placeholder="Ex: 150" className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#158d44] transition-colors" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-sm text-gray-400 font-medium block mb-2">Temperatura da Pilha (°C)</label>
+                                        <input type="number" required placeholder="Ex: 62" className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#158d44] transition-colors" />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-gray-400 font-medium block mb-2">Humidade (%)</label>
+                                        <input type="number" required placeholder="Ex: 55" className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#158d44] transition-colors" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 font-medium block mb-2">Alimentos Colhidos / Doados Hoje (Kg) - Opcional</label>
+                                    <input type="number" placeholder="Ex: 25" className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 focus:outline-none focus:border-[#158d44] transition-colors" />
+                                </div>
+                                <button type="submit" className="w-full bg-[#158d44] hover:bg-[#1b9e4f] text-white py-4 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#158d44]/20 mt-4 active:scale-95">
+                                    Registar no Sistema Central
+                                </button>
+                            </form>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* --- VISÃO GERAL (Para Sponsors e Admins) --- */}
+                    {activeTab === 'visao-geral' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-6">
+                          <div>
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Painel de Impacto Ambiental</h2>
+                            <p className="text-gray-400 text-xs md:text-sm">Monitorização de GEE, mitigação líquida e circularidade.</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
+                          <MetricCard title="Compensado Líquido" value={`${compensadoLiquido} t`} subtitle="Volume tCO₂e (Bruto - Cancelados)" icon={Leaf} />
+                          <MetricCard title="Desviados" value={`${dados.residuosDesviados || 0} t`} subtitle="Resíduo orgânico" icon={TrendingUp} accentColor="text-[#a78f66]" />
+                          <MetricCard title="Tokens CAU" value={dados.tokensCustodia || 0} subtitle="De patrocínio ativo" icon={Award} accentColor="text-white" highlight={true} />
+                          <MetricCard title="Logística Reversa" value={`${dados.logisticaReversa?.recuperadas || 0} t`} subtitle={`de ${dados.logisticaReversa?.inseridas || 0} t inseridas`} icon={Recycle} accentColor="text-[#158d44]" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4">
+                          <MetricCard title="Água Poupada" value={`${dados.pegadaHidrica?.poupada || 0} L`} subtitle="Retenção via compostagem" icon={Droplet} accentColor="text-blue-400" />
+                          <MetricCard title="Energia Limpa" value={`${dados.energiaRenovavel || 0}%`} subtitle="Matriz Renovável (Escopo 2)" icon={Sun} accentColor="text-yellow-500" />
+                          <MetricCard title="Fundo de Carbono" value={`R$ ${dados.precificacaoCarbono?.fundo || 0}`} subtitle={`Taxa Interna: R$ ${dados.precificacaoCarbono?.taxaInterna || 0}/t`} icon={DollarSign} accentColor="text-[#158d44]" />
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
+                          <div className="lg:col-span-2 bg-[#111111] border border-[#2a2a2a] rounded-2xl p-5 md:p-6 w-full">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-bold text-base md:text-lg text-white">Balanço de Carbono Líquido</h3>
+                              <BarChart3 size={18} className="text-gray-500" />
+                            </div>
+                            <p className="text-[11px] md:text-sm text-gray-400 mb-6 line-clamp-1 md:line-clamp-none">Acompanhamento das emissões vs compensações ajustadas.</p>
+                            
+                            <div className="flex items-end h-32 md:h-40 gap-2 md:gap-8 mt-6 border-b border-[#2a2a2a] pb-2 relative">
+                              <div className="absolute w-full h-full flex flex-col justify-between z-0 pointer-events-none">
+                                <div className="border-t border-[#1a1a1a] w-full h-0"></div>
+                                <div className="border-t border-[#1a1a1a] w-full h-0"></div>
+                                <div className="border-t border-[#1a1a1a] w-full h-0"></div>
+                              </div>
+                              <div className="flex-1 flex flex-col items-center z-10 group">
+                                <span className="text-[10px] md:text-xs text-gray-500 mb-1 md:mb-2">{dados.emissoesTotais}t</span>
+                                <div className="w-full max-w-[40px] md:max-w-[64px] bg-[#222] rounded-t-md h-full relative transition-all hover:bg-[#333]"></div>
+                                <span className="text-[9px] md:text-sm font-medium mt-2 text-center text-gray-400 leading-tight">Brutas</span>
+                              </div>
+                              <div className="flex-1 flex flex-col items-center z-10 group">
+                                <span className="text-[10px] md:text-xs text-[#0e7a63] mb-1 md:mb-2">{compensadoLiquido}t</span>
+                                <div className="w-full max-w-[40px] md:max-w-[64px] bg-[#0e7a63] rounded-t-md relative transition-all shadow-[0_0_15px_rgba(14,122,99,0.3)]" style={{ height: `${(compensadoLiquido / dados.emissoesTotais) * 100}%` }}></div>
+                                <span className="text-[9px] md:text-sm font-medium mt-2 text-center text-gray-400 leading-tight">CAU Líquido</span>
+                              </div>
+                              <div className="flex-1 flex flex-col items-center z-10 group">
+                                <span className="text-[10px] md:text-xs text-red-400 mb-1 md:mb-2">{saldoDevedorLiquido}t</span>
+                                <div className="w-full max-w-[40px] md:max-w-[64px] bg-red-900/40 rounded-t-md relative transition-all border border-red-900/50" style={{ height: `${(saldoDevedorLiquido / dados.emissoesTotais) * 100}%` }}></div>
+                                <span className="text-[9px] md:text-sm font-medium mt-2 text-center text-gray-400 leading-tight">Saldo</span>
+                              </div>
+                            </div>
+                            <ProgressBar total={dados.emissoesTotais} compensado={dados.compensado} cancelamentos={dados.cancelamentos} />
+                          </div>
+
+                          <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl p-5 md:p-6 relative overflow-hidden flex flex-col">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#0e7a63] to-[#a78f66]"></div>
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h3 className="font-bold text-base md:text-lg text-white flex items-center">
+                                  Telemetria do Projeto
+                                </h3>
+                                <p className="text-[10px] md:text-xs text-gray-400 mt-1">Dados ao vivo das composteiras.</p>
+                              </div>
+                              <div className="flex items-center space-x-1 bg-[#1a1a1a] border border-[#333] px-2 py-1 rounded-full">
+                                <span className="w-2 h-2 rounded-full bg-[#158d44] animate-pulse-slow"></span>
+                                <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">Live</span>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-2 space-y-3 flex-1 flex flex-col justify-center">
+                              <div className="flex items-center justify-between p-3 bg-black/40 rounded-xl border border-white/5">
+                                <div className="flex items-center">
+                                  <div className="p-2 bg-[#0d332d] rounded-lg mr-3">
+                                    <MapPin size={16} className="text-[#0e7a63]" />
+                                  </div>
+                                  <div>
+                                    <span className="block text-[10px] text-gray-500 uppercase font-semibold">Localidade Foco</span>
+                                    <span className="text-sm font-medium text-white">Horta Cajuru (PR)</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 bg-black/40 rounded-xl border border-white/5">
+                                <div className="flex items-center">
+                                  <div className="p-2 bg-orange-900/30 rounded-lg mr-3">
+                                    <Thermometer size={16} className="text-orange-500" />
+                                  </div>
+                                  <div>
+                                    <span className="block text-[10px] text-gray-500 uppercase font-semibold">Núcleo da Composteira</span>
+                                    <span className="text-sm font-medium text-white flex items-center">
+                                      {iotTemp.toFixed(1)}°C 
+                                      <span className="ml-2 text-[10px] text-[#158d44] bg-[#158d44]/20 px-1.5 py-0.5 rounded">Ideal</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 bg-black/40 rounded-xl border border-white/5">
+                                <div className="flex items-center">
+                                  <div className="p-2 bg-blue-900/30 rounded-lg mr-3">
+                                    <Activity size={16} className="text-blue-400" />
+                                  </div>
+                                  <div>
+                                    <span className="block text-[10px] text-gray-500 uppercase font-semibold">Status de Mitigação</span>
+                                    <span className="text-sm font-medium text-white">Metano Ativo Capturado</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <button onClick={() => setModalBlockchainAberto(true)} className="w-full mt-4 text-[11px] text-[#a78f66] hover:text-white transition-colors text-center font-semibold">
+                              Ver Rastreabilidade Blockchain Completa &rarr;
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* MÓDULO 1: MAPA DE IMPACTO (Para Sponsors e Admins) */}
+                    {activeTab === 'mapa-hortas' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
+                        <div className="mb-6">
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Digital Twin: Mapa de Hortas</h2>
+                            <p className="text-gray-400 text-xs md:text-sm">Navegue, faça zoom e clique nas hortas comunitárias patrocinadas para visualizar o impacto real gerado por localidade.</p>
+                        </div>
+                        
+                        <div className="relative w-full h-[60vh] min-h-[500px] bg-[#1a1a1a] rounded-2xl overflow-hidden border border-[#2a2a2a] shadow-lg flex flex-col">
+                            <MapComponent onSelect={setHortaSelecionada} />
+                            
+                            {hortaSelecionada && (
+                                <div className="absolute right-4 top-4 md:right-6 md:top-6 bg-[#0a0a0a]/95 backdrop-blur-md border border-[#2a2a2a] p-5 rounded-xl w-64 animate-scale-up shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[2000] pointer-events-auto">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h4 className="font-bold text-white flex items-center">
+                                            <MapPin size={16} className="text-[#158d44] mr-2"/>
+                                            Horta {hortaSelecionada}
+                                        </h4>
+                                        <button onClick={() => setHortaSelecionada(null)} className="p-1"><X size={16} className="text-gray-500 hover:text-white transition-colors"/></button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Composto Gerado</span>
+                                            <span className="text-sm font-bold text-white">45.2 t</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Alimentos Cultivados</span>
+                                            <span className="text-sm font-bold text-[#158d44]">2.8 t orgânicos</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Famílias Impactadas</span>
+                                            <span className="text-sm font-bold text-white">~58 famílias</span>
+                                        </div>
+                                    </div>
+                                    <button className="w-full mt-4 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                                       Ver Detalhes ODS
+                                    </button>
+                                </div>
+                            )}
+
+                            {!hortaSelecionada && (
+                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md px-5 py-2.5 rounded-full text-[11px] md:text-xs text-gray-200 font-medium z-[2000] pointer-events-none shadow-lg border border-white/5 whitespace-nowrap">
+                                    <MapPin size={14} className="inline mr-2 text-[#a78f66]" /> Navegue e clique nos pontos
+                                </div>
+                            )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ABA: IMPACTO DUPLO & ODS (Para Sponsors e Admins) */}
+                    {activeTab === 'impacto-duplo' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-6">
+                          <div>
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Certificação de Impacto Duplo</h2>
+                            <p className="text-[#a78f66] text-xs md:text-sm font-medium">Além do carbono: mitigação climática aliada ao desenvolvimento social.</p>
+                          </div>
+                          <div className="bg-[#1a1a1a] border border-[#333] px-4 py-2 rounded-lg flex items-center space-x-2">
+                             <Target size={16} className="text-[#158d44]" />
+                             <span className="text-xs text-white font-bold tracking-wider">ODS ONU ALINHADO</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-gradient-to-br from-[#111111] to-[#0a0a0a] border border-[#2a2a2a] p-6 rounded-2xl relative overflow-hidden group hover:border-[#158d44]/50 transition-colors">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-[#158d44]/10 rounded-bl-full -mr-2 -mt-2"></div>
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="w-10 h-10 bg-[#158d44] rounded-lg flex items-center justify-center shadow-lg">
+                                        <span className="text-white font-black text-xl">13</span>
+                                    </div>
+                                    <h3 className="font-bold text-white leading-tight">Ação Contra a<br/>Mudança Global</h3>
+                                </div>
+                                <p className="text-xs text-gray-400 mb-4 line-clamp-3">Redução direta de metano (CH₄) em aterros e captura de carbono no solo via agricultura regenerativa.</p>
+                                <div className="pt-4 border-t border-[#222]">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Mitigação Validada</span>
+                                        <span className="text-lg font-bold text-white">{dados.compensado} tCO₂e</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-[#111111] to-[#0a0a0a] border border-[#2a2a2a] p-6 rounded-2xl relative overflow-hidden group hover:border-[#e58b29]/50 transition-colors">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-[#e58b29]/10 rounded-bl-full -mr-2 -mt-2"></div>
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="w-10 h-10 bg-[#e58b29] rounded-lg flex items-center justify-center shadow-lg">
+                                        <span className="text-white font-black text-xl">11</span>
+                                    </div>
+                                    <h3 className="font-bold text-white leading-tight">Cidades e Comu.<br/>Sustentáveis</h3>
+                                </div>
+                                <p className="text-xs text-gray-400 mb-4 line-clamp-3">Gestão inteligente de resíduos urbanos de Curitiba, transformando lixo em insumo circular nas hortas.</p>
+                                <div className="pt-4 border-t border-[#222]">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Resíduo Desviado</span>
+                                        <span className="text-lg font-bold text-white">{dados.residuosDesviados || 0} t</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-[#111111] to-[#0a0a0a] border border-[#2a2a2a] p-6 rounded-2xl relative overflow-hidden group hover:border-[#dda63a]/50 transition-colors">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-[#dda63a]/10 rounded-bl-full -mr-2 -mt-2"></div>
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="w-10 h-10 bg-[#dda63a] rounded-lg flex items-center justify-center shadow-lg">
+                                        <span className="text-white font-black text-xl">2</span>
+                                    </div>
+                                    <h3 className="font-bold text-white leading-tight">Fome Zero e<br/>Agric. Sustentável</h3>
+                                </div>
+                                <p className="text-xs text-gray-400 mb-4 line-clamp-3">O adubo gerado pelos seus CAUs é doado para produzir alimentos orgânicos para famílias locais.</p>
+                                <div className="pt-4 border-t border-[#222]">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Hortas Apoiadas</span>
+                                        <span className="text-lg font-bold text-white">{dados.hortasPatrocinadas || 0} un</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-[#111111] border border-[#a78f66]/30 rounded-2xl p-6 md:p-8 relative overflow-hidden">
+                            <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none">
+                                <HeartHandshake size={250} />
+                            </div>
+                            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+                                <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                        <Users size={18} className="text-[#a78f66]" />
+                                        <h3 className="text-lg font-bold text-white uppercase tracking-widest">Salvaguardas & Engajamento Local</h3>
+                                    </div>
+                                    <p className="text-sm text-gray-300 leading-relaxed mb-6">
+                                        Seguindo as diretrizes mais estritas do mercado voluntário, nosso projeto passa por <strong>consulta pública extensiva</strong>. A população do entorno não é apenas espectadora; eles são os executores e beneficiários diretos dos fundos gerados pela aquisição dos seus Tokens CAU.
+                                    </p>
+                                    
+                                    <div className="flex gap-6">
+                                        <div>
+                                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Famílias Integradas</p>
+                                            <p className="text-2xl font-bold text-white">{dados.familiasImpactadas || 0}</p>
+                                        </div>
+                                        <div className="w-px h-10 bg-[#333]"></div>
+                                        <div>
+                                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Renda Local Gerada</p>
+                                            <p className="text-2xl font-bold text-[#158d44]">{dados.rendaGerada}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="w-full md:w-1/3 bg-black/40 border border-white/10 p-5 rounded-xl backdrop-blur-sm">
+                                    <h4 className="text-xs font-bold text-white mb-3 flex items-center"><Scale size={14} className="mr-2 text-gray-400"/> Comitê Independente</h4>
+                                    <ul className="space-y-3">
+                                        <li className="text-[11px] text-gray-400 flex items-start"><CheckCircle2 size={12} className="text-[#a78f66] mr-2 mt-0.5 flex-shrink-0"/> Monitoramento por ONGs Locais.</li>
+                                        <li className="text-[11px] text-gray-400 flex items-start"><CheckCircle2 size={12} className="text-[#a78f66] mr-2 mt-0.5 flex-shrink-0"/> Critério de "Adicionalidade" Rigoroso provado.</li>
+                                        <li className="text-[11px] text-gray-400 flex items-start"><CheckCircle2 size={12} className="text-[#a78f66] mr-2 mt-0.5 flex-shrink-0"/> Preço Premium devido ao alto impacto social.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* MÓDULO 3: PILAR SOCIAL CORPORATIVO (Para Sponsors e Admins) */}
+                    {activeTab === 'social' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="mb-6">
+                           <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Pilar Social Corporativo (S)</h2>
+                           <p className="text-gray-400 text-xs md:text-sm">Monitorização de Saúde, Segurança e Inclusão no Ambiente de Trabalho.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl flex flex-col justify-center items-center text-center relative overflow-hidden">
+                                <div className="absolute top-4 left-4 p-2 bg-blue-900/20 rounded-lg">
+                                    <Smile size={20} className="text-blue-400" />
+                                </div>
+                                <h3 className="text-gray-400 text-sm font-medium mt-6 mb-2">Bem-Estar & eNPS</h3>
+                                <div className="flex items-baseline space-x-2">
+                                    <span className="text-6xl font-black text-white">{dados.enps || 0}</span>
+                                </div>
+                                <p className="text-blue-400 text-xs font-bold mt-2 bg-blue-900/20 px-3 py-1 rounded-full uppercase tracking-widest">Zona de Excelência</p>
+                            </div>
+
+                            <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl flex flex-col justify-center items-center text-center relative overflow-hidden">
+                                <div className="absolute top-4 left-4 p-2 bg-[#158d44]/10 rounded-lg">
+                                    <HardHat size={20} className="text-[#158d44]" />
+                                </div>
+                                <h3 className="text-gray-400 text-sm font-medium mt-6 mb-2">Saúde e Segurança no Trabalho (SST)</h3>
+                                <div className="flex items-baseline space-x-2">
+                                    <span className="text-6xl font-black text-white">{dados.social?.diasSemAcidentes || 0}</span>
+                                    <span className="text-sm font-bold text-gray-500 mb-2">Dias</span>
+                                </div>
+                                <p className="text-[#158d44] text-xs font-bold mt-2 bg-[#158d44]/20 px-3 py-1 rounded-full uppercase tracking-widest">Sem acidentes com afastamento</p>
+                            </div>
+
+                            <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl flex flex-col justify-between">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-gray-400 text-sm font-medium">Diversidade e Inclusão Demográfica</h3>
+                                    <div className="p-2 bg-[#a78f66]/10 rounded-lg">
+                                        <PieChart size={20} className="text-[#a78f66]" />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-5">
+                                    <div>
+                                        <div className="flex justify-between text-xs mb-1">
+                                            <span className="font-bold text-white">Mulheres em Cargos de Liderança</span>
+                                            <span className="text-[#a78f66] font-bold">{dados.social?.diversidade?.mulheresLideranca || 0}%</span>
+                                        </div>
+                                        <div className="w-full bg-[#1a1a1a] rounded-full h-2">
+                                            <div className="bg-[#a78f66] h-2 rounded-full" style={{ width: `${dados.social?.diversidade?.mulheresLideranca || 0}%` }}></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between text-xs mb-1">
+                                            <span className="font-bold text-white">Minorias Representadas no Quadro</span>
+                                            <span className="text-[#0e7a63] font-bold">{dados.social?.diversidade?.minorias || 0}%</span>
+                                        </div>
+                                        <div className="w-full bg-[#1a1a1a] rounded-full h-2">
+                                            <div className="bg-[#0e7a63] h-2 rounded-full" style={{ width: `${dados.social?.diversidade?.minorias || 0}%` }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* MÓDULO 4: PILAR DE GOVERNANÇA (Para Sponsors e Admins) */}
+                    {activeTab === 'governanca' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="mb-6">
+                           <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Pilar de Governança (G)</h2>
+                           <p className="text-gray-400 text-xs md:text-sm">Auditoria contínua de compliance, ética e proteção de dados.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="p-2 bg-[#a78f66]/20 rounded-lg">
+                                        <Truck size={20} className="text-[#a78f66]" />
+                                    </div>
+                                    <h3 className="text-sm font-bold text-white">Cadeia de Suprimentos</h3>
+                                </div>
+                                <div className="flex justify-between items-end mt-6">
+                                    <span className="text-3xl font-bold text-white">{dados.fornecedores?.auditados || 0}</span>
+                                    <span className="text-gray-500 mb-1">/{dados.fornecedores?.total || 0} aud.</span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Score ESG médio dos parceiros: <strong className="text-white">{dados.fornecedores?.score || 0}/10</strong></p>
+                                <div className="w-full bg-[#1a1a1a] rounded-full h-1.5 mt-3">
+                                    <div className="bg-[#a78f66] h-1.5 rounded-full" style={{ width: `${((dados.fornecedores?.auditados || 0) / (dados.fornecedores?.total || 1)) * 100}%` }}></div>
+                                </div>
+                            </div>
+
+                            <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="p-2 bg-blue-900/30 rounded-lg">
+                                        <ShieldCheck size={20} className="text-blue-400" />
+                                    </div>
+                                    <h3 className="text-sm font-bold text-white">Monitor de Compliance</h3>
+                                </div>
+                                <div className="flex justify-between items-end mt-6">
+                                    <span className="text-3xl font-bold text-white">{dados.governanca?.treinamentoEtica || 0}%</span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Colaboradores com treinamento ético atualizado.</p>
+                                <div className="w-full bg-[#1a1a1a] rounded-full h-1.5 mt-3">
+                                    <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: `${dados.governanca?.treinamentoEtica || 0}%` }}></div>
+                                </div>
+                            </div>
+
+                            <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="p-2 bg-red-900/30 rounded-lg">
+                                        <ShieldAlert size={20} className="text-red-400" />
+                                    </div>
+                                    <h3 className="text-sm font-bold text-white">Canal de Denúncias</h3>
+                                </div>
+                                <div className="flex justify-between items-end mt-4">
+                                    <div>
+                                        <span className="text-[10px] text-gray-500 block uppercase">Reportes no Ano</span>
+                                        <span className="text-2xl font-bold text-white">{dados.governanca?.denuncias?.total || 0}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] text-gray-500 block uppercase">Resolvidas</span>
+                                        <span className="text-2xl font-bold text-[#158d44]">{dados.governanca?.denuncias?.resolvidas || 0}</span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-4">Tempo médio de resolução: <strong className="text-white">4 dias</strong>.</p>
+                            </div>
+
+                            <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl flex flex-col">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="p-2 bg-[#a78f66]/20 rounded-lg">
+                                        <ListChecks size={20} className="text-[#a78f66]" />
+                                    </div>
+                                    <h3 className="text-sm font-bold text-white">Adequação LGPD</h3>
+                                </div>
+                                <div className="flex-1 flex flex-col justify-center items-center">
+                                    {dados.governanca?.lgpd ? (
+                                        <>
+                                            <CheckCircle2 size={40} className="text-[#158d44] mb-2" />
+                                            <span className="text-sm font-bold text-white">Compliance Ativo</span>
+                                            <span className="text-[10px] text-gray-400 mt-1">Checklist 100% verificado</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <AlertTriangle size={40} className="text-orange-500 mb-2" />
+                                            <span className="text-sm font-bold text-white">Revisão Necessária</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ENGAJAMENTO EQUIPA (Para Sponsors e Admins) */}
+                    {activeTab === 'engajamento' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="bg-gradient-to-r from-[#0d332d] to-[#111] rounded-2xl border border-[#0e7a63]/30 p-6 md:p-8 mb-6 shadow-lg relative overflow-hidden">
+                           <div className="absolute top-0 right-0 p-4 opacity-10">
+                              <Users size={150} />
+                           </div>
+                           <div className="relative z-10">
+                             <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Equipa Sustentável (B2B2C)</h2>
+                             <p className="text-sm text-gray-300 max-w-2xl">
+                               Fracione os Tokens CAU da sua carteira e distribua-os como recompensa para os seus colaboradores. Gamifique o ESG na sua empresa e transforme a sua equipa em embaixadores climáticos.
+                             </p>
+                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                           <div className="md:col-span-2 bg-[#111111] border border-[#2a2a2a] rounded-2xl overflow-hidden">
+                              <div className="p-5 border-b border-[#2a2a2a] flex justify-between items-center">
+                                 <h3 className="font-bold text-white">Ranking de Colaboradores (Eco-Rewards)</h3>
+                                 <Award className="text-[#a78f66]" size={20} />
+                              </div>
+                              <div className="p-0">
+                                 <table className="w-full text-left border-collapse">
+                                    <tbody className="divide-y divide-[#1a1a1a]">
+                                       {[
+                                          { nome: 'Ana Costa', cargo: 'Marketing', tokens: 4.5, acao: '1 Mês de Carona Solidária' },
+                                          { nome: 'Carlos Silva', cargo: 'Operações', tokens: 3.0, acao: 'Reciclagem Doméstica Comprovada' },
+                                          { nome: 'Juliana Lima', cargo: 'Diretoria', tokens: 2.2, acao: 'Substituição de Frota para EV' },
+                                       ].map((colab, idx) => (
+                                          <tr key={idx} className="hover:bg-[#161616] transition-colors group">
+                                             <td className="p-4">
+                                                <div className="flex items-center">
+                                                   <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center text-[#0e7a63] font-bold mr-3 border border-[#333]">
+                                                      {colab.nome.charAt(0)}
+                                                   </div>
+                                                   <div>
+                                                      <p className="text-sm font-bold text-white">{colab.nome}</p>
+                                                      <p className="text-[10px] text-gray-500">{colab.cargo}</p>
+                                                   </div>
+                                                </div>
+                                             </td>
+                                             <td className="p-4 hidden sm:table-cell">
+                                                <span className="bg-[#222] text-gray-300 text-[10px] px-2 py-1 rounded">{colab.acao}</span>
+                                             </td>
+                                             <td className="p-4 text-right">
+                                                <div className="flex items-center justify-end space-x-4">
+                                                   <div className="flex flex-col items-end">
+                                                      <span className="text-sm font-bold text-[#158d44]">{colab.tokens} CAUs</span>
+                                                   </div>
+                                                   <button onClick={() => darRecompensa(colab.nome)} className="bg-[#0e7a63] hover:bg-[#158d44] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg active:scale-95 flex items-center">
+                                                      Recompensar
+                                                   </button>
+                                                </div>
+                                             </td>
+                                          </tr>
+                                       ))}
+                                    </tbody>
+                                 </table>
+                              </div>
+                           </div>
+
+                           {/* Batalha ESG */}
+                           <div className="bg-gradient-to-b from-[#111] to-[#0a0a0a] border border-[#a78f66]/30 rounded-2xl p-5 flex flex-col relative overflow-hidden">
+                              <div className="absolute top-0 right-0 w-32 h-32 bg-[#a78f66]/5 rounded-bl-full pointer-events-none"></div>
+                              <div className="flex items-center justify-between mb-4 relative z-10">
+                                 <h3 className="font-bold text-white flex items-center">
+                                    <Swords size={18} className="text-[#a78f66] mr-2" />
+                                    Batalha ESG (Por Área)
+                                 </h3>
+                              </div>
+                              <div className="space-y-4 flex-1 relative z-10">
+                                 {dados.departamentos?.map((dep, idx) => (
+                                    <div key={idx} className="flex items-center justify-between bg-[#161616] p-3 rounded-xl border border-[#222] hover:border-[#a78f66]/50 transition-colors">
+                                       <span className="text-sm font-bold text-gray-300">{dep.nome}</span>
+                                       <div className="flex items-center space-x-2">
+                                          <span className="text-sm font-bold text-[#158d44]">{dep.tokens} CAUs</span>
+                                          {dep.tendencia === 'up' ? <TrendingUp size={14} className="text-[#158d44]" /> : <TrendingUp size={14} className="text-red-500 transform rotate-180" />}
+                                       </div>
+                                    </div>
+                                 ))}
+                              </div>
+                              <button className="w-full mt-4 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-white py-2 rounded-xl text-xs font-bold transition-colors">
+                                 Ver Ranking Completo
+                              </button>
+                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="space-y-6">
+                              <MetricCard title="Saldo para Recompensas" value={`${dados.tokensCustodia || 0}`} subtitle="CAU disponíveis p/ resgate" icon={Award} accentColor="text-[#a78f66]" />
+                              
+                              <div className="bg-[#111111] border border-[#2a2a2a] p-5 rounded-2xl flex flex-col items-center text-center">
+                                 <div className="w-12 h-12 rounded-full bg-[#158d44]/20 flex items-center justify-center mb-3">
+                                    <Leaf className="text-[#158d44]" size={24} />
+                                 </div>
+                                 <h4 className="text-white font-bold text-sm mb-1">Impacto Escopo 3</h4>
+                                 <p className="text-xs text-gray-400 mb-4">Colaboradores engajados reduzem emissões indiretas da empresa.</p>
+                                 <button className="text-[#0e7a63] text-xs font-bold hover:text-white transition-colors border border-[#0e7a63] rounded-lg px-4 py-2 w-full">
+                                    Convidar Equipa (Gerar Link)
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* INTEGRAÇÕES & API (Para Sponsors e Admins) */}
+                    {activeTab === 'integracoes' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="mb-6">
+                           <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Hub de Integrações ERP</h2>
+                           <p className="text-gray-400 text-xs md:text-sm">Automatize a recolha de dados de emissões diretamente dos seus sistemas corporativos.</p>
+                        </div>
+                        
+                        <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl flex items-start space-x-3 mb-6">
+                            <Webhook size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <h4 className="text-sm font-bold text-blue-100">Regra de Mapeamento de Dados Ativa</h4>
+                                <p className="text-xs text-blue-200/80 mt-1">O motor de sincronização ERP aplica nativamente a função <code className="bg-black/40 px-1 py-0.5 rounded text-blue-300">parseInt(storeId, 10)</code>. Isto garante que códigos de lojas com zeros à esquerda (ex: Filial "052") sejam consolidados corretamente com a Filial "52", evitando duplicidades no cálculo de emissões líquidas.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                           <div className="bg-[#111111] border border-[#0e7a63]/50 p-6 rounded-2xl relative overflow-hidden group">
+                              <div className="flex justify-between items-start mb-4">
+                                 <div className="flex items-center space-x-2">
+                                    <div className="bg-white p-1.5 rounded">
+                                       <img src="https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg" alt="SAP" className="h-4 object-contain" />
+                                    </div>
+                                    <span className="text-white font-bold">SAP S/4HANA</span>
+                                 </div>
+                                 <span className="bg-[#158d44]/20 text-[#158d44] text-[10px] font-bold px-2 py-1 rounded">CONECTADO</span>
+                              </div>
+                              <p className="text-xs text-gray-400 mb-4">Sincronização diária de consumo energético e faturas de resíduos.</p>
+                              <div className="flex justify-between items-center text-[10px]">
+                                 <span className="text-gray-500">Última sinc: Hoje, 08:30</span>
+                                 <button className="text-red-400 hover:text-red-300">Desconectar</button>
+                              </div>
+                           </div>
+
+                           <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl relative overflow-hidden group">
+                              <div className="flex justify-between items-start mb-4">
+                                 <div className="flex items-center space-x-2">
+                                    <div className="bg-white p-1.5 rounded">
+                                       <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/Totvs_logo.svg" alt="TOTVS" className="h-4 object-contain opacity-80" />
+                                    </div>
+                                    <span className="text-white font-bold">TOTVS Protheus</span>
+                                 </div>
+                              </div>
+                              <p className="text-xs text-gray-400 mb-4">Mapeamento de logística e frota para cálculo de Escopo 1.</p>
+                              <button className="w-full bg-[#1a1a1a] border border-[#333] hover:bg-[#222] text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                                 Conectar Sistema
+                              </button>
+                           </div>
+
+                           <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl relative overflow-hidden group">
+                              <div className="flex justify-between items-start mb-4">
+                                 <div className="flex items-center space-x-2">
+                                    <div className="bg-white p-1.5 rounded">
+                                       <img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg" alt="Salesforce" className="h-4 object-contain opacity-80" />
+                                    </div>
+                                    <span className="text-white font-bold">Salesforce Net Zero</span>
+                                 </div>
+                              </div>
+                              <p className="text-xs text-gray-400 mb-4">Exportação de tokens CAU para a cloud global de sustentabilidade.</p>
+                              <button className="w-full bg-[#1a1a1a] border border-[#333] hover:bg-[#222] text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                                 Conectar Sistema
+                              </button>
+                           </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-[#111111] to-[#0a0a0a] border border-[#2a2a2a] rounded-2xl p-6 md:p-8">
+                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                              <div className="flex-1">
+                                 <div className="flex items-center space-x-3 mb-2">
+                                    <Database size={24} className="text-[#a78f66]" />
+                                    <h3 className="text-lg font-bold text-white">Acesso à API (Developers)</h3>
+                                 </div>
+                                 <p className="text-sm text-gray-400 mb-4">Integre o motor de cálculo do Ambiente Livre em qualquer plataforma interna. Extraia certificados e ordens de compra via REST API.</p>
+                                 <div className="bg-black border border-[#333] rounded-lg p-3 flex items-center justify-between">
+                                    <div className="font-mono text-xs text-gray-500 select-all overflow-hidden truncate mr-4">
+                                       sk_live_51M0...9H2xL_AmbienteLivre_Corp
+                                    </div>
+                                    <button className="text-[#a78f66] hover:text-white flex items-center text-xs font-bold">
+                                       <Key size={14} className="mr-1" />
+                                       Revelar Chave
+                                    </button>
+                                 </div>
+                              </div>
+                              <div className="w-full md:w-auto">
+                                 <button className="w-full bg-[#222] border border-[#333] hover:bg-[#333] text-white py-3 px-6 rounded-xl text-sm font-bold transition-colors flex items-center justify-center">
+                                    <FileText size={16} className="mr-2" />
+                                    Ler Documentação API
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* COPILOTO IA (Para Sponsors e Admins) */}
+                    {/* REGISTRO PÚBLICO & CERTIFICADOS (Para Sponsors e Admins) */}
+                    {activeTab === 'certificados' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                         <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-2 mb-6">
+                          <div>
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Registro Público e Certificados</h2>
+                            <p className="text-gray-400 text-xs md:text-sm">Rastreabilidade ponta-a-ponta: emissões planejadas, emitidas e aposentadas.</p>
+                          </div>
+                          <button className="bg-[#1a1a1a] border border-[#333] hover:bg-[#222] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center transition-colors">
+                             <Network size={14} className="mr-2 text-[#a78f66]"/> Explorador Blockchain
+                          </button>
+                        </div>
+
+                        <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl overflow-hidden relative shadow-lg">
+                          <div className="md:hidden absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-[#111111] to-transparent pointer-events-none z-10"></div>
+                          
+                          <div className="overflow-x-auto hide-scrollbar">
+                            <table className="w-full text-left border-collapse min-w-[600px]">
+                              <thead>
+                                <tr className="bg-[#1a1a1a] border-b border-[#2a2a2a] text-[10px] md:text-xs uppercase tracking-wider text-gray-400">
+                                  <th className="p-3 md:p-4 font-semibold whitespace-nowrap">ID do Certificado / Hash</th>
+                                  <th className="p-3 md:p-4 font-semibold whitespace-nowrap">Data</th>
+                                  <th className="p-3 md:p-4 font-semibold whitespace-nowrap">Volume / Impacto</th>
+                                  <th className="p-3 md:p-4 font-semibold whitespace-nowrap">Registro / Status</th>
+                                  <th className="p-3 md:p-4 font-semibold text-right whitespace-nowrap">Ação</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#1a1a1a]">
+                                {certificados.map((cert) => (
+                                  <tr key={cert.id} className="hover:bg-[#161616] transition-colors group">
+                                    <td className="p-3 md:p-4 font-medium text-white text-sm md:text-base whitespace-nowrap">
+                                      <div className="flex items-center">
+                                          <FileText size={16} className="mr-2 text-[#a78f66] flex-shrink-0" />
+                                          {cert.id}
+                                      </div>
+                                      <span className="text-[10px] text-gray-500 font-mono ml-6 block mt-1">0x{Math.random().toString(16).substr(2, 8)}...</span>
+                                    </td>
+                                    <td className="p-3 md:p-4 text-xs md:text-sm text-gray-400 whitespace-nowrap">{cert.data}</td>
+                                    <td className="p-3 md:p-4 text-sm md:text-base text-white font-bold whitespace-nowrap">{cert.volume} tCO₂e</td>
+                                    <td className="p-3 md:p-4 text-xs md:text-sm whitespace-nowrap">
+                                        <span className="bg-red-900/30 text-red-400 border border-red-900/50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                            Aposentado (Destruído)
+                                        </span>
+                                    </td>
+                                    <td className="p-3 md:p-4 text-right">
+                                      <button className="text-[10px] md:text-xs bg-[#222] hover:bg-[#0e7a63] text-gray-300 hover:text-white px-3 py-2 md:py-1.5 rounded-lg transition-colors flex items-center justify-end ml-auto whitespace-nowrap active:scale-95">
+                                        <Download size={14} className="mr-1 md:mr-1.5" />
+                                        Laudo PDF
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* BENEFÍCIOS CAU — DISTRIBUIÇÃO (Empresa Patrocinadora e Admin) */}
+                    {activeTab === 'beneficios' && (user.role === 'sponsor' || user.role === 'admin') && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-6">
+                          <div>
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Distribuição de CAU</h2>
+                            <p className="text-gray-400 text-xs md:text-sm max-w-2xl">Distribua os CAU adquiridos no patrocínio entre os colaboradores, proporcionalmente à pontuação de cada um. O resgate dos benefícios acontece no perfil de cada colaborador. Os tokens não são comercializáveis.</p>
+                          </div>
+                          <button onClick={() => setModalAberto(true)} className="bg-[#0e7a63] hover:bg-[#158d44] text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center transition-all shadow-lg active:scale-95 whitespace-nowrap">
+                            <Plus size={16} className="mr-2" /> Patrocinar (Adicionar CAU)
+                          </button>
+                        </div>
+
+                        {/* SALDO + CONTROLE DE DISTRIBUIÇÃO */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                          <div className="bg-gradient-to-br from-[#0d332d] to-[#111] border border-[#0e7a63]/40 rounded-2xl p-5 md:p-6 flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 rounded-full bg-[#a78f66]/20 flex items-center justify-center text-[#a78f66]">
+                                <Award size={24} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">CAU adquiridos (disponíveis)</p>
+                                <p className="text-2xl md:text-3xl font-bold text-white">{dados.tokensCustodia || 0} <span className="text-base font-medium text-gray-400">CAU</span></p>
+                              </div>
+                            </div>
+                            <span className="hidden sm:inline text-[10px] text-[#158d44] bg-[#158d44]/10 border border-[#158d44]/20 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider">Não comercializável</span>
+                          </div>
+
+                          <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl p-5 md:p-6">
+                            <label className="text-xs text-gray-400 uppercase tracking-wider font-bold block mb-3">Distribuir por pontuação</label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="number"
+                                min="1"
+                                value={qtdDistribuir}
+                                onChange={(e) => setQtdDistribuir(e.target.value)}
+                                placeholder="Qtd. de CAU"
+                                className="flex-1 min-w-0 bg-[#161616] border border-[#333] text-white rounded-xl py-3 px-4 font-bold focus:outline-none focus:border-[#0e7a63] transition-colors"
+                              />
+                              <button onClick={distribuirPorPontuacao} className="bg-[#0e7a63] hover:bg-[#158d44] text-white px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 whitespace-nowrap flex items-center">
+                                <Share2 size={16} className="mr-2" /> Distribuir
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mt-3">O valor é dividido entre os colaboradores na proporção da pontuação de cada um.</p>
+                          </div>
+                        </div>
+
+                        {/* TABELA DE COLABORADORES */}
+                        <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-lg">
+                          <div className="overflow-x-auto hide-scrollbar">
+                            <table className="w-full text-left border-collapse min-w-[560px]">
+                              <thead>
+                                <tr className="bg-[#1a1a1a] border-b border-[#2a2a2a] text-[10px] md:text-xs uppercase tracking-wider text-gray-400">
+                                  <th className="p-4 font-semibold">Colaborador</th>
+                                  <th className="p-4 font-semibold">Área</th>
+                                  <th className="p-4 font-semibold text-center">Pontuação</th>
+                                  <th className="p-4 font-semibold text-center">% do total</th>
+                                  <th className="p-4 font-semibold text-right">Saldo CAU</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#1a1a1a]">
+                                {(() => { const totalPts = colaboradores.reduce((s, c) => s + (c.pontuacao || 0), 0) || 1; return colaboradores.map((c) => (
+                                  <tr key={c.id} className="hover:bg-[#161616] transition-colors">
+                                    <td className="p-4 font-medium text-white">
+                                      <div className="flex items-center">
+                                        <div className="w-8 h-8 rounded-full bg-[#a78f66]/20 text-[#a78f66] flex items-center justify-center mr-3 text-xs font-bold flex-shrink-0">{c.nome.charAt(0)}</div>
+                                        {c.nome}
+                                      </div>
+                                    </td>
+                                    <td className="p-4 text-sm text-gray-400">{c.cargo}</td>
+                                    <td className="p-4 text-sm text-white font-bold text-center">{c.pontuacao}</td>
+                                    <td className="p-4 text-xs text-gray-400 text-center">{Math.round((c.pontuacao || 0) / totalPts * 100)}%</td>
+                                    <td className="p-4 text-right"><span className="text-sm font-bold text-[#158d44]">{c.saldo || 0} CAU</span></td>
+                                  </tr>
+                                )); })()}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-gray-600 mt-6 text-center">A pontuação é definida pela empresa conforme seus critérios de engajamento. Dados demonstrativos.</p>
+                      </div>
+                    )}
+
+                    {/* BENEFÍCIOS CAU — RESGATE (Colaborador) */}
+                    {activeTab === 'beneficios' && user.role === 'colaborador' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="mb-6">
+                          <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Resgatar Benefícios</h2>
+                          <p className="text-gray-400 text-xs md:text-sm max-w-2xl">Use seus CAU recebidos da empresa para resgatar produtos das hortas, produtos Ambiente Livre e gratificações.</p>
+                        </div>
+
+                        {/* SALDO DO COLABORADOR */}
+                        <div className="bg-gradient-to-br from-[#0d332d] to-[#111] border border-[#0e7a63]/40 rounded-2xl p-5 md:p-6 mb-6 flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full bg-[#a78f66]/20 flex items-center justify-center text-[#a78f66]">
+                              <Award size={24} />
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">Seu saldo</p>
+                              <p className="text-2xl md:text-3xl font-bold text-white">{colabAtual?.saldo || 0} <span className="text-base font-medium text-gray-400">CAU</span></p>
+                            </div>
+                          </div>
+                          <span className="hidden sm:inline text-[10px] text-[#158d44] bg-[#158d44]/10 border border-[#158d44]/20 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider">Não comercializável</span>
+                        </div>
+
+                        {/* CATÁLOGO DE RESGATE */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {[
+                            { nome: 'Cesta de Orgânicos da Horta', categoria: 'Produtos das Hortas', custo: 8, Icone: Sprout, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
+                            { nome: 'Kit de Mudas e Adubo', categoria: 'Produtos das Hortas', custo: 5, Icone: Leaf, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
+                            { nome: 'Vale-Compras Ambiente Livre', categoria: 'Loja Ambiente Livre', custo: 10, Icone: Tags, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
+                            { nome: 'Composteira Doméstica', categoria: 'Loja Ambiente Livre', custo: 20, Icone: Recycle, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
+                            { nome: 'Day-off (Folga Remunerada)', categoria: 'Gratificações da Empresa', custo: 30, Icone: Smile, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
+                            { nome: 'Saída Antecipada', categoria: 'Gratificações da Empresa', custo: 12, Icone: HeartHandshake, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
+                          ].map((item, idx) => (
+                            <div key={idx} className="bg-[#111111] border border-[#2a2a2a] rounded-2xl p-5 flex flex-col">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.bg} ${item.cor}`}>
+                                  <item.Icone size={20} />
+                                </div>
+                                <span className="text-sm font-bold text-white">{item.custo} CAU</span>
+                              </div>
+                              <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1">{item.categoria}</p>
+                              <h4 className="text-sm font-bold text-white mb-4 flex-1">{item.nome}</h4>
+                              <button
+                                onClick={() => resgatarBeneficio(item)}
+                                disabled={(colabAtual?.saldo || 0) < item.custo}
+                                className="w-full bg-[#1a1a1a] border border-[#333] hover:border-[#0e7a63] hover:bg-[#0d332d]/40 text-white py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#333] disabled:hover:bg-[#1a1a1a]"
+                              >
+                                {(colabAtual?.saldo || 0) < item.custo ? 'Saldo insuficiente' : 'Resgatar'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-gray-600 mt-6 text-center">Itens e custos em CAU são configuráveis pela empresa e pelo Ambiente Livre. Catálogo demonstrativo.</p>
+                      </div>
+                    )}
+
+                    <div className="h-28 w-full md:hidden shrink-0"></div>
+
+                  </div>
+                </div>
+              </main>
+              
+              {/* MOBILE BOTTOM NAVIGATION (AJUSTADA CONFORME PERFIL) */}
+              <div className="md:hidden fixed bottom-0 left-0 w-full bg-[#0a0a0a]/95 backdrop-blur-lg border-t border-[#1a1a1a] z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.3)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+                <div className="flex overflow-x-auto hide-scrollbar px-2 py-2 snap-x snap-mandatory">
+                  
+                  {/* Navegação Mobile para Produtor */}
+                  {user.role === 'producer' && (
+                    <>
+                      <button onClick={() => setActiveTab('visao-horta')} className={`flex flex-col items-center justify-center min-w-[100px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'visao-horta' ? 'text-[#158d44]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Sprout size={20} className={`mb-1 transition-transform ${activeTab === 'visao-horta' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Minha Horta</span>
+                      </button>
+                      <button onClick={() => setActiveTab('registrar-dados')} className={`flex flex-col items-center justify-center min-w-[100px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'registrar-dados' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <ClipboardEdit size={20} className={`mb-1 transition-transform ${activeTab === 'registrar-dados' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Lançar Dados</span>
+                      </button>
+                    </>
+                  )}
+
+                  {/* Navegação Mobile para Colaborador */}
+                  {user.role === 'colaborador' && (
+                    <button onClick={() => setActiveTab('beneficios')} className={`flex flex-col items-center justify-center min-w-[120px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'beneficios' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
+                      <Award size={20} className={`mb-1 transition-transform ${activeTab === 'beneficios' ? 'scale-110' : ''}`} />
+                      <span className="text-[10px] font-semibold tracking-wide">Resgatar Benefícios</span>
+                    </button>
+                  )}
+
+                  {/* Navegação Mobile para Sponsor/Admin */}
+                  {(user.role === 'sponsor' || user.role === 'admin') && (
+                    <>
+                      <button onClick={() => setActiveTab('visao-geral')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'visao-geral' ? 'text-[#0e7a63]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <LayoutDashboard size={20} className={`mb-1 transition-transform ${activeTab === 'visao-geral' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Início</span>
+                      </button>
+
+                      <button onClick={() => setActiveTab('mapa-hortas')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'mapa-hortas' ? 'text-[#0e7a63]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Map size={20} className={`mb-1 transition-transform ${activeTab === 'mapa-hortas' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Mapa</span>
+                      </button>
+
+                      <button onClick={() => setActiveTab('impacto-duplo')} className={`flex flex-col items-center justify-center min-w-[80px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'impacto-duplo' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Globe size={20} className={`mb-1 transition-transform ${activeTab === 'impacto-duplo' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">ODS</span>
+                      </button>
+                      
+                      <button onClick={() => setActiveTab('social')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'social' ? 'text-[#158d44]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <HeartHandshake size={20} className={`mb-1 transition-transform ${activeTab === 'social' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Social</span>
+                      </button>
+
+                      <button onClick={() => setActiveTab('governanca')} className={`flex flex-col items-center justify-center min-w-[80px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'governanca' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Landmark size={20} className={`mb-1 transition-transform ${activeTab === 'governanca' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">ESG</span>
+                      </button>
+                      
+                      <button onClick={() => setActiveTab('engajamento')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'engajamento' ? 'text-[#158d44]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Users size={20} className={`mb-1 transition-transform ${activeTab === 'engajamento' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Equipa</span>
+                      </button>
+
+                      <button onClick={() => setActiveTab('certificados')} className={`flex flex-col items-center justify-center min-w-[80px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'certificados' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <ShieldCheck size={20} className={`mb-1 transition-transform ${activeTab === 'certificados' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Ledger</span>
+                      </button>
+                      
+                      <button onClick={() => setActiveTab('beneficios')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 relative ${activeTab === 'beneficios' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Award size={20} className={`mb-1 transition-transform ${activeTab === 'beneficios' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Benefícios</span>
+                      </button>
+
+                      <button onClick={() => setActiveTab('integracoes')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 relative ${activeTab === 'integracoes' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Webhook size={20} className={`mb-1 transition-transform ${activeTab === 'integracoes' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">APIs</span>
+                      </button>
+
+                      {user.role === 'admin' && (
+                         <button onClick={() => setActiveTab('gestao-usuarios')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'gestao-usuarios' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
+                          <UserCog size={20} className={`mb-1 transition-transform ${activeTab === 'gestao-usuarios' ? 'scale-110' : ''}`} />
+                          <span className="text-[10px] font-semibold tracking-wide">Utilizadores</span>
+                        </button>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Botão Logout Mobile Universal */}
+                  <button onClick={handleLogout} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 text-red-500 hover:text-red-400`}>
+                    <LogOut size={20} className="mb-1" />
+                    <span className="text-[10px] font-semibold tracking-wide">Sair</span>
+                  </button>
+
+                </div>
+              </div>
+
+            </div>
+          );
+        }
+
+        export default App;

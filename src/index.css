@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Estilos customizados (migrados do <style> do HTML original) ===== */
+/* Melhorias de usabilidade Mobile */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Animações personalizadas */
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-down {
+            animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        @keyframes scaleUp {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-up {
+            animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .7; transform: scale(1.05); }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Estilos customizados para o Leaflet Map (Dark Mode Premium) */
+        .dark-map-tiles {
+            filter: grayscale(100%) invert(100%) brightness(65%) contrast(120%) sepia(40%) hue-rotate(110deg);
+        }
+        .custom-leaflet-tooltip {
+            background-color: #111 !important;
+            color: white !important;
+            border: 1px solid #333 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+        }
+        .custom-leaflet-tooltip::before {
+            border-top-color: #333 !important;
+        }
+        /* Garantir que o mapa tem um z-index inferior aos modais do Tailwind */
+        .leaflet-container {
+            z-index: 10 !important;
+            font-family: inherit;
+        }
