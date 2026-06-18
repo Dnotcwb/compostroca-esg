@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Compostroca ESG — Dashboard ESG B2B
 
-## Getting Started
+Dashboard ESG B2B "Ambiente Livre" para monitoramento de impacto ambiental,
+rastreabilidade de compostagem e mercado de Tokens CAU.
 
-First, run the development server:
+## Tecnologia
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Aplicação de **arquivo único** (`index.html`) que roda 100% no navegador:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **React 18** + **lucide-react** via [esm.sh](https://esm.sh)
+- **Babel Standalone** (transpila o JSX no navegador) — versão **fixada** em `8.0.2`
+- **TailwindCSS** via CDN
+- **Leaflet** para os mapas de impacto
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Não há etapa de build. O deploy publica o `index.html` direto na raiz
+(ver `netlify.toml`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
+Hospedado no Netlify (https://compostroca-esg.netlify.app), com deploy
+automático a cada push na branch `main`.
 
-To learn more about Next.js, take a look at the following resources:
+## Histórico de correções
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A tela ficava preta porque as CDNs eram carregadas sem versão fixada e o
+Babel atualizou para a major 8, que (1) passou a rejeitar `>` solto em texto
+JSX e (2) passou a usar o *automatic JSX runtime*, exigindo um *import map*
+para resolver `react/jsx-runtime`. Ambos foram corrigidos e o Babel foi
+fixado em `8.0.2`.

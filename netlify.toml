@@ -1,0 +1,6 @@
+# Site estático de arquivo único (index.html).
+# Sobrescreve a config antiga do Netlify (que estava como Next.js:
+# "npm run build" -> ".next"). Aqui nao ha build: publicamos a raiz.
+[build]
+  command = "echo 'Site estatico - sem etapa de build'"
+  publish = "."
