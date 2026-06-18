@@ -108,10 +108,9 @@
         import React, { useState, useEffect } from 'https://esm.sh/react@18';
         import { createRoot } from 'https://esm.sh/react-dom@18/client';
         import { 
-          LayoutDashboard, 
-          FileText, 
-          Wallet, 
-          Leaf, 
+          LayoutDashboard,
+          FileText,
+          Leaf,
           Download, 
           TrendingUp, 
           ArrowUpRight, 
@@ -496,8 +495,8 @@
                       <div className="absolute -left-[17px] top-1 bg-[#158d44] border border-[#1b9e4f] w-8 h-8 rounded-full flex items-center justify-center z-10 shadow-[0_0_15px_rgba(21,141,68,0.4)]">
                         <CheckCircle2 size={16} className="text-white" />
                       </div>
-                      <h4 className="text-sm font-bold text-white">4. Status do Ativo: Em Custódia</h4>
-                      <p className="text-xs text-gray-500 mt-1">Ativo alocado na wallet da TechCorp Solutions S.A.</p>
+                      <h4 className="text-sm font-bold text-white">4. Status do Ativo: Patrocínio Ativo</h4>
+                      <p className="text-xs text-gray-500 mt-1">CAU de patrocínio registrado em nome da TechCorp Solutions S.A.</p>
                       <div className="mt-3 flex items-center text-[10px] text-[#158d44] bg-[#158d44]/10 border border-[#158d44]/20 px-3 py-1.5 rounded-full w-fit font-bold tracking-wider uppercase">
                         <ShieldCheck size={12} className="mr-1.5" />
                         Auditado e Verificado
@@ -522,7 +521,7 @@
           );
         };
 
-        // --- MODAL DE AQUISIÇÃO (MERCADO PRIMÁRIO) ---
+        // --- MODAL DE PATROCÍNIO (AQUISIÇÃO DE CAU PARA APOIAR O PROJETO) ---
         const ModalAquisicao = ({ isOpen, onClose, onConfirm }) => {
           const [quantidade, setQuantidade] = useState(10);
           const [finalidade, setFinalidade] = useState('aposentar');
@@ -545,8 +544,8 @@
               <div className="bg-[#111111] w-full md:w-[500px] max-h-[90vh] overflow-y-auto md:rounded-3xl rounded-t-3xl border border-[#2a2a2a] relative z-10 animate-scale-up flex flex-col pb-safe">
                 <div className="flex justify-between items-center p-5 border-b border-[#2a2a2a] sticky top-0 bg-[#111111]/90 backdrop-blur-md z-20">
                   <div>
-                    <h3 className="text-lg font-bold text-white">Adquirir Tokens CAU</h3>
-                    <p className="text-xs text-[#a78f66]">Projeto Compostroca</p>
+                    <h3 className="text-lg font-bold text-white">Patrocinar o Projeto</h3>
+                    <p className="text-xs text-[#a78f66]">Aquisição de CAU · Projeto Compostroca</p>
                   </div>
                   <button onClick={onClose} className="p-2 text-gray-400 hover:text-white bg-[#1a1a1a] rounded-full transition-colors">
                     <X size={20} />
@@ -572,16 +571,16 @@
 
                   <div>
                     <label className="text-sm text-gray-400 font-medium mb-3 flex items-center">
-                      <ShieldCheck size={16} className="mr-2 text-[#a78f66]" /> Destinação do Ativo
+                      <ShieldCheck size={16} className="mr-2 text-[#a78f66]" /> Destinação do CAU
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <button onClick={() => setFinalidade('aposentar')} className={`p-4 rounded-xl text-left border transition-all flex flex-col gap-1 ${finalidade === 'aposentar' ? 'bg-[#0d332d]/40 border-[#0e7a63] text-white shadow-[0_0_15px_rgba(14,122,99,0.15)]' : 'bg-[#161616] border-[#222] text-gray-400 hover:bg-[#1a1a1a]'}`}>
                         <span className="font-semibold text-sm">Aposentar Token</span>
                         <span className="text-[10px] leading-tight opacity-70">Consumir para relatório de neutralização GHG/B3.</span>
                       </button>
-                      <button onClick={() => setFinalidade('custodia')} className={`p-4 rounded-xl text-left border transition-all flex flex-col gap-1 ${finalidade === 'custodia' ? 'bg-[#a78f66]/20 border-[#a78f66] text-white shadow-[0_0_15px_rgba(167,143,102,0.1)]' : 'bg-[#161616] border-[#222] text-gray-400 hover:bg-[#1a1a1a]'}`}>
-                        <span className="font-semibold text-sm">Custodiar (Wallet)</span>
-                        <span className="text-[10px] leading-tight opacity-70">Guardar para o futuro ou vender no mercado secundário.</span>
+                      <button onClick={() => setFinalidade('recompensas')} className={`p-4 rounded-xl text-left border transition-all flex flex-col gap-1 ${finalidade === 'recompensas' ? 'bg-[#a78f66]/20 border-[#a78f66] text-white shadow-[0_0_15px_rgba(167,143,102,0.1)]' : 'bg-[#161616] border-[#222] text-gray-400 hover:bg-[#1a1a1a]'}`}>
+                        <span className="font-semibold text-sm">Recompensas (Equipa)</span>
+                        <span className="text-[10px] leading-tight opacity-70">Disponibilizar como benefício para os colaboradores.</span>
                       </button>
                     </div>
                   </div>
@@ -609,121 +608,7 @@
 
                 <div className="p-5 border-t border-[#2a2a2a] bg-[#0a0a0a] rounded-b-3xl">
                   <button onClick={handleConfirmar} className="w-full bg-[#0e7a63] hover:bg-[#158d44] text-white py-4 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#0e7a63]/20 active:scale-[0.98] flex justify-center items-center">
-                    Confirmar Transação
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        };
-
-        // --- MODAL DE VENDA (MERCADO SECUNDÁRIO) ---
-        const ModalVenda = ({ isOpen, onClose, onConfirm, saldoDisponivel }) => {
-          const [quantidade, setQuantidade] = useState(1);
-          const precoSugeridoIA = 550; 
-          const [preco, setPreco] = useState(precoSugeridoIA);
-          
-          if (!isOpen) return null;
-
-          const valorBruto = quantidade * preco;
-          const taxaPlataforma = valorBruto * 0.08;
-          const valorLiquido = valorBruto - taxaPlataforma;
-          
-          const handleConfirmar = () => {
-            onConfirm({ quantidade, preco, valorLiquido });
-            setQuantidade(1);
-            setPreco(precoSugeridoIA);
-          };
-
-          return (
-            <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center animate-fade-in">
-              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
-              
-              <div className="bg-[#111111] w-full md:w-[500px] max-h-[90vh] overflow-y-auto md:rounded-3xl rounded-t-3xl border border-[#2a2a2a] relative z-10 animate-scale-up flex flex-col pb-safe">
-                
-                <div className="flex justify-between items-center p-5 border-b border-[#2a2a2a] sticky top-0 bg-[#111111]/90 backdrop-blur-md z-20">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-[#a78f66]/20 rounded-lg">
-                      <Tags size={20} className="text-[#a78f66]" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">Criar Oferta de Venda</h3>
-                      <p className="text-xs text-gray-400">Mercado Secundário</p>
-                    </div>
-                  </div>
-                  <button onClick={onClose} className="p-2 text-gray-400 hover:text-white bg-[#1a1a1a] rounded-full transition-colors">
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className="p-5 md:p-6 space-y-6">
-                  <div className="bg-[#a78f66]/10 border border-[#a78f66]/30 p-4 rounded-xl flex items-start space-x-3">
-                    <Sparkles size={20} className="text-[#a78f66] flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-300">
-                      O <strong>Copiloto IA</strong> detetou alta procura por CAUs na plataforma. O preço sugerido por token é de <strong className="text-white">R$ {precoSugeridoIA.toFixed(2)}</strong>.
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-sm text-gray-400 font-medium">Quantidade a Vender</label>
-                      <span className="text-xs font-semibold text-[#a78f66]">Máximo: {saldoDisponivel} CAUs</span>
-                    </div>
-                    <div className="flex items-center justify-between bg-[#161616] rounded-xl border border-[#333] p-1">
-                      <button onClick={() => quantidade > 1 && setQuantidade(quantidade - 1)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition-colors active:scale-95 disabled:opacity-50" disabled={quantidade <= 1}>
-                        <Minus size={20} />
-                      </button>
-                      <div className="flex flex-col items-center">
-                        <span className="font-bold text-2xl text-white">{quantidade}</span>
-                        <span className="text-[10px] text-gray-500 uppercase tracking-widest">Tokens</span>
-                      </div>
-                      <button onClick={() => quantidade < saldoDisponivel && setQuantidade(quantidade + 1)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition-colors active:scale-95 disabled:opacity-50" disabled={quantidade >= saldoDisponivel}>
-                        <Plus size={20} />
-                      </button>
-                    </div>
-
-                    <div className="pt-2">
-                      <label className="text-sm text-gray-400 font-medium block mb-2">Preço Unitário (R$)</label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">R$</span>
-                        <input 
-                          type="number" 
-                          value={preco} 
-                          onChange={(e) => setPreco(Number(e.target.value))}
-                          className="w-full bg-[#161616] border border-[#333] text-white rounded-xl py-3 pl-10 pr-4 font-bold focus:outline-none focus:border-[#a78f66] transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-[#0a0a0a] to-[#111111] p-4 rounded-xl border border-[#2a2a2a]">
-                    <div className="flex justify-between text-sm mb-2 text-gray-400">
-                      <span>Valor Bruto da Oferta:</span>
-                      <span>{(valorBruto).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-4 text-red-400">
-                      <span>Taxa de Intermediação (8%):</span>
-                      <span>- {(taxaPlataforma).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                    </div>
-                    <div className="flex justify-between items-end border-t border-[#222] pt-4 mt-2">
-                      <span className="text-gray-300 font-medium">Recebimento Líquido Estimado:</span>
-                      <div className="text-right">
-                        <span className="text-2xl font-bold text-[#158d44] block">
-                          {(valorLiquido).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
-                        <span className="text-[10px] text-gray-500">Creditado no momento da venda</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 border-t border-[#2a2a2a] bg-[#0a0a0a] rounded-b-3xl">
-                  <button 
-                    onClick={handleConfirmar}
-                    className="w-full bg-[#a78f66] hover:bg-[#8c7652] text-[#050505] py-4 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#a78f66]/10 active:scale-[0.98] flex justify-center items-center"
-                    disabled={saldoDisponivel <= 0}
-                  >
-                    Listar no Livro de Ofertas
+                    Confirmar Patrocínio
                   </button>
                 </div>
               </div>
@@ -743,8 +628,7 @@
           
           // Estados UI Modais
           const [modalAberto, setModalAberto] = useState(false);
-          const [modalBlockchainAberto, setModalBlockchainAberto] = useState(false); 
-          const [modalVendaAberto, setModalVendaAberto] = useState(false);
+          const [modalBlockchainAberto, setModalBlockchainAberto] = useState(false);
           
           // Estados UI CRUD Usuários
           const [modalUserAberto, setModalUserAberto] = useState(false);
@@ -840,22 +724,16 @@
               ]);
             }
 
-            showNotificacao('Transação Concluída', `${quantidade} Tokens CAU processados.`);
-          };
-
-          const processarVenda = ({ quantidade, preco, valorLiquido }) => {
-            setModalVendaAberto(false);
-            setDados(prev => ({ ...prev, tokensCustodia: prev.tokensCustodia - quantidade }));
-            showNotificacao('Oferta de Venda Publicada', `${quantidade} CAUs listados a R$ ${preco}/un.`);
+            showNotificacao('Patrocínio Confirmado', `${quantidade} CAU de patrocínio registrados.`);
           };
 
           const darRecompensa = (nome) => {
              if(dados.tokensCustodia < 1) {
-                showNotificacao('Saldo Insuficiente', `Precisa ter Tokens em Custódia para recompensar.`);
+                showNotificacao('Saldo Insuficiente', `Precisa ter CAU de patrocínio disponíveis para recompensar.`);
                 return;
              }
              setDados(prev => ({ ...prev, tokensCustodia: prev.tokensCustodia - 1 }));
-             showNotificacao('Eco-Reward Enviado!', `1 CAU fracionado e enviado para a carteira de ${nome}.`);
+             showNotificacao('Recompensa Enviada!', `1 CAU enviado como benefício para ${nome}.`);
           };
 
           const gerarRelatorioGlobal = () => {
@@ -951,7 +829,7 @@
                         <div className="p-2 bg-[#0e7a63]/20 rounded-lg text-[#0e7a63]"><Globe size={20} /></div>
                         <div className="text-left">
                           <h3 className="text-white font-bold text-sm group-hover:text-[#0e7a63] transition-colors">Empresa Patrocinadora</h3>
-                          <p className="text-[10px] text-gray-500">Dashboard ESG e Wallet CAU</p>
+                          <p className="text-[10px] text-gray-500">Dashboard ESG e Patrocínio</p>
                         </div>
                       </div>
                       <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#0e7a63]" />
@@ -990,10 +868,7 @@
 
               {/* MODAIS GERAIS (Para Admin/Sponsor) */}
               {user.role !== 'producer' && (
-                <>
-                  <ModalVenda isOpen={modalVendaAberto} onClose={() => setModalVendaAberto(false)} onConfirm={processarVenda} saldoDisponivel={dados.tokensCustodia} />
-                  <ModalAquisicao isOpen={modalAberto} onClose={() => setModalAberto(false)} onConfirm={processarCompra} />
-                </>
+                <ModalAquisicao isOpen={modalAberto} onClose={() => setModalAberto(false)} onConfirm={processarCompra} />
               )}
               
               {/* MODAIS DE GESTÃO DE UTILIZADORES (Admin) */}
@@ -1093,13 +968,9 @@
                       </button>
 
                       <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Operações</div>
-                      <button onClick={() => setActiveTab('copilot')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm relative overflow-hidden ${activeTab === 'copilot' ? 'bg-gradient-to-r from-[#0d332d] to-[#111] text-white border border-[#0e7a63] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
-                        <Sparkles size={18} className={activeTab === 'copilot' ? 'text-[#a78f66]' : ''} />
-                        <span>Copiloto IA</span>
-                      </button>
-                      <button onClick={() => setActiveTab('wallet')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'wallet' ? 'bg-[#111111] text-white border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
-                        <Wallet size={18} />
-                        <span>Wallet CAU</span>
+                      <button onClick={() => setActiveTab('beneficios')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'beneficios' ? 'bg-[#111111] text-white border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <Award size={18} />
+                        <span>Benefícios CAU</span>
                       </button>
                       <button onClick={() => setActiveTab('integracoes')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'integracoes' ? 'bg-[#111111] text-[#a78f66] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
                         <Webhook size={18} />
@@ -1148,7 +1019,7 @@
                     {(user.role === 'sponsor' || user.role === 'admin') && (
                       <button onClick={() => setModalAberto(true)} className="bg-[#0e7a63] hover:bg-[#158d44] text-white p-2 md:px-4 md:py-2 rounded-lg text-sm font-semibold flex items-center justify-center transition-all shadow-lg active:scale-95">
                         <Plus size={18} className="md:mr-2" />
-                        <span className="hidden lg:inline">Adquirir Tokens</span>
+                        <span className="hidden lg:inline">Patrocinar</span>
                       </button>
                     )}
                   </div>
@@ -1258,7 +1129,7 @@
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
                           <MetricCard title="Compensado Líquido" value={`${compensadoLiquido} t`} subtitle="Volume tCO₂e (Bruto - Cancelados)" icon={Leaf} />
                           <MetricCard title="Desviados" value={`${dados.residuosDesviados || 0} t`} subtitle="Resíduo orgânico" icon={TrendingUp} accentColor="text-[#a78f66]" />
-                          <MetricCard title="Tokens CAU" value={dados.tokensCustodia || 0} subtitle="Em custódia" icon={Wallet} accentColor="text-white" highlight={true} />
+                          <MetricCard title="Tokens CAU" value={dados.tokensCustodia || 0} subtitle="De patrocínio ativo" icon={Award} accentColor="text-white" highlight={true} />
                           <MetricCard title="Logística Reversa" value={`${dados.logisticaReversa?.recuperadas || 0} t`} subtitle={`de ${dados.logisticaReversa?.inseridas || 0} t inseridas`} icon={Recycle} accentColor="text-[#158d44]" />
                         </div>
 
@@ -1761,7 +1632,7 @@
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                            <div className="space-y-6">
-                              <MetricCard title="Saldo para Recompensas" value={`${dados.tokensCustodia || 0}`} subtitle="CAUs na sua Wallet" icon={Wallet} accentColor="text-[#a78f66]" />
+                              <MetricCard title="Saldo para Recompensas" value={`${dados.tokensCustodia || 0}`} subtitle="CAU disponíveis p/ resgate" icon={Award} accentColor="text-[#a78f66]" />
                               
                               <div className="bg-[#111111] border border-[#2a2a2a] p-5 rounded-2xl flex flex-col items-center text-center">
                                  <div className="w-12 h-12 rounded-full bg-[#158d44]/20 flex items-center justify-center mb-3">
@@ -1873,61 +1744,6 @@
                     )}
 
                     {/* COPILOTO IA (Para Sponsors e Admins) */}
-                    {activeTab === 'copilot' && user.role !== 'producer' && (
-                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="relative overflow-hidden bg-gradient-to-br from-[#0a1f1b] to-[#111] rounded-2xl border border-[#0e7a63]/40 p-6 md:p-8 mb-6 shadow-lg shadow-[#0e7a63]/5">
-                          <div className="absolute -top-20 -right-20 opacity-20 pointer-events-none">
-                            <Sparkles size={200} className="text-[#a78f66]" />
-                          </div>
-                          <div className="relative z-10 max-w-2xl">
-                            <div className="flex items-center space-x-2 mb-4">
-                              <Sparkles size={20} className="text-[#a78f66]" />
-                              <h2 className="text-xl md:text-2xl font-bold text-white">Inteligência ESG B2B</h2>
-                            </div>
-                            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-                              Analisamos o mercado global de carbono voluntário. Veja por que a sua carteira CAU é um ativo de <strong>altíssimo padrão</strong> comparado a créditos florestais comuns.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          <div className="bg-[#111111] border border-[#a78f66]/50 p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#a78f66]/5 rounded-full blur-2xl pointer-events-none"></div>
-                            <div>
-                              <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-[#a78f66]/20 rounded-xl text-[#a78f66]">
-                                  <Zap size={24} />
-                                </div>
-                                <span className="bg-[#a78f66]/10 text-[#a78f66] text-xs px-2 py-1 rounded font-bold border border-[#a78f66]/20">Prêmio de Adicionalidade</span>
-                              </div>
-                              <h3 className="text-lg font-bold text-white mb-2">Valorização do Impacto Duplo</h3>
-                              <p className="text-sm text-gray-400 mb-6">
-                                Projetos de resíduos e agricultura com forte engajamento comunitário (como o CAU) estão sendo negociados com um <strong>prêmio de 30% a 40% acima</strong> de créditos padrões. O mercado corporativo exige lastro real, aumentando a liquidez dos seus tokens na nossa Wallet.
-                              </p>
-                            </div>
-                            <button onClick={() => setModalAberto(true)} className="bg-[#0e7a63] hover:bg-[#158d44] text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 flex justify-center items-center">
-                              Adquirir Mais CAUs <ArrowUpRight size={16} className="ml-2" />
-                            </button>
-                          </div>
-                          
-                          <div className="bg-[#111111] border border-[#2a2a2a] p-6 rounded-2xl flex flex-col justify-between">
-                            <div>
-                              <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-red-900/20 rounded-xl text-red-500">
-                                  <TrendingUp size={24} />
-                                </div>
-                                <span className="bg-[#222] text-xs px-2 py-1 rounded text-gray-400 font-medium">Análise de Risco CORSIA</span>
-                              </div>
-                              <h3 className="text-lg font-bold text-white mb-2">Exigências Setoriais 2027</h3>
-                              <p className="text-sm text-gray-400 mb-6">
-                                Prevemos que créditos de baixa integridade serão descontinuados nas novas regras da aviação e mercados de *compliance*. Seus tokens CAU estão ancorados em metodologias MRV independentes, blindando sua empresa contra *Greenwashing*.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     {/* REGISTRO PÚBLICO & CERTIFICADOS (Para Sponsors e Admins) */}
                     {activeTab === 'certificados' && user.role !== 'producer' && (
                       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1987,29 +1803,69 @@
                       </div>
                     )}
 
-                    {/* WALLET / MARKETPLACE DIRETO (Para Sponsors e Admins) */}
-                    {activeTab === 'wallet' && user.role !== 'producer' && (
-                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center justify-center min-h-[50vh]">
-                        <div className="w-full max-w-lg mx-auto text-center px-4">
-                          <div className="w-16 h-16 md:w-20 md:h-20 bg-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 border border-[#2a2a2a] shadow-[0_0_30px_rgba(167,143,102,0.15)]">
-                            <Wallet size={28} className="text-[#a78f66] md:w-8 md:h-8" />
+                    {/* BENEFÍCIOS CAU — MOEDA INTERNA PARA COLABORADORES (Para Sponsors e Admins) */}
+                    {activeTab === 'beneficios' && user.role !== 'producer' && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-6">
+                          <div>
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Benefícios CAU</h2>
+                            <p className="text-gray-400 text-xs md:text-sm max-w-2xl">Os CAU adquiridos no patrocínio viram moeda interna: os colaboradores resgatam por produtos das hortas, produtos Ambiente Livre e gratificações da empresa. Os tokens não são comercializáveis.</p>
                           </div>
-                          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Marketplace B2B Direto</h2>
-                          <p className="text-sm md:text-base text-gray-400 mb-8 leading-relaxed">
-                            A sua empresa possui <strong className="text-white text-lg md:text-xl mx-1 block md:inline mt-2 md:mt-0">{dados.tokensCustodia} Tokens CAU</strong> 
-                            <span className="block md:inline mt-2 md:mt-0">disponíveis para transação no mercado financeiro climático.</span>
-                          </p>
-                          
-                          <div className="flex flex-col sm:flex-row justify-center gap-3 md:space-x-4">
-                            <button onClick={() => setModalAberto(true)} className="w-full sm:w-auto bg-[#111111] border border-[#2a2a2a] hover:border-[#0e7a63] text-white px-6 py-3.5 md:py-3 rounded-xl font-semibold transition-all active:scale-95 text-sm md:text-base">
-                              Adquirir Tokens (Funding Direto)
+                          {(user.role === 'sponsor' || user.role === 'admin') && (
+                            <button onClick={() => setModalAberto(true)} className="bg-[#0e7a63] hover:bg-[#158d44] text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center transition-all shadow-lg active:scale-95 whitespace-nowrap">
+                              <Plus size={16} className="mr-2" /> Patrocinar (Adicionar CAU)
                             </button>
-                            <button onClick={() => setModalVendaAberto(true)} className="w-full sm:w-auto bg-[#a78f66] hover:bg-[#8c7652] text-[#050505] px-6 py-3.5 md:py-3 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center active:scale-95 text-sm md:text-base">
-                              Vender Posição (Mercado)
-                              <ArrowUpRight size={18} className="ml-2" />
-                            </button>
-                          </div>
+                          )}
                         </div>
+
+                        {/* SALDO DE RECOMPENSAS */}
+                        <div className="bg-gradient-to-br from-[#0d332d] to-[#111] border border-[#0e7a63]/40 rounded-2xl p-5 md:p-6 mb-6 flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full bg-[#a78f66]/20 flex items-center justify-center text-[#a78f66]">
+                              <Award size={24} />
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">Saldo de Recompensas</p>
+                              <p className="text-2xl md:text-3xl font-bold text-white">{dados.tokensCustodia || 0} <span className="text-base font-medium text-gray-400">CAU</span></p>
+                            </div>
+                          </div>
+                          <span className="hidden sm:inline text-[10px] text-[#158d44] bg-[#158d44]/10 border border-[#158d44]/20 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider">Não comercializável</span>
+                        </div>
+
+                        {/* CATÁLOGO DE RESGATE */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {[
+                            { nome: 'Cesta de Orgânicos da Horta', categoria: 'Produtos das Hortas', custo: 8, Icone: Sprout, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
+                            { nome: 'Kit de Mudas e Adubo', categoria: 'Produtos das Hortas', custo: 5, Icone: Leaf, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
+                            { nome: 'Vale-Compras Ambiente Livre', categoria: 'Loja Ambiente Livre', custo: 10, Icone: Tags, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
+                            { nome: 'Composteira Doméstica', categoria: 'Loja Ambiente Livre', custo: 20, Icone: Recycle, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
+                            { nome: 'Day-off (Folga Remunerada)', categoria: 'Gratificações da Empresa', custo: 30, Icone: Smile, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
+                            { nome: 'Saída Antecipada', categoria: 'Gratificações da Empresa', custo: 12, Icone: HeartHandshake, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
+                          ].map((item, idx) => (
+                            <div key={idx} className="bg-[#111111] border border-[#2a2a2a] rounded-2xl p-5 flex flex-col">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.bg} ${item.cor}`}>
+                                  <item.Icone size={20} />
+                                </div>
+                                <span className="text-sm font-bold text-white">{item.custo} CAU</span>
+                              </div>
+                              <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1">{item.categoria}</p>
+                              <h4 className="text-sm font-bold text-white mb-4 flex-1">{item.nome}</h4>
+                              <button
+                                onClick={() => {
+                                  if ((dados.tokensCustodia || 0) < item.custo) { showNotificacao('Saldo insuficiente', `São necessários ${item.custo} CAU para resgatar "${item.nome}".`); return; }
+                                  setDados(prev => ({ ...prev, tokensCustodia: prev.tokensCustodia - item.custo }));
+                                  showNotificacao('Resgate solicitado', `"${item.nome}" resgatado por ${item.custo} CAU.`);
+                                }}
+                                className="w-full bg-[#1a1a1a] border border-[#333] hover:border-[#0e7a63] hover:bg-[#0d332d]/40 text-white py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                              >
+                                Resgatar
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <p className="text-[11px] text-gray-600 mt-6 text-center">Itens e custos em CAU são configuráveis pela empresa e pelo Ambiente Livre. Catálogo demonstrativo.</p>
                       </div>
                     )}
 
@@ -2065,11 +1921,6 @@
                         <span className="text-[10px] font-semibold tracking-wide">ESG</span>
                       </button>
                       
-                      <button onClick={() => setActiveTab('copilot')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 relative ${activeTab === 'copilot' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
-                        <Sparkles size={20} className={`mb-1 transition-transform ${activeTab === 'copilot' ? 'scale-110' : ''}`} />
-                        <span className="text-[10px] font-semibold tracking-wide">IA</span>
-                      </button>
-
                       <button onClick={() => setActiveTab('engajamento')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'engajamento' ? 'text-[#158d44]' : 'text-gray-500 hover:text-gray-300'}`}>
                         <Users size={20} className={`mb-1 transition-transform ${activeTab === 'engajamento' ? 'scale-110' : ''}`} />
                         <span className="text-[10px] font-semibold tracking-wide">Equipa</span>
@@ -2080,9 +1931,9 @@
                         <span className="text-[10px] font-semibold tracking-wide">Ledger</span>
                       </button>
                       
-                      <button onClick={() => setActiveTab('wallet')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 relative ${activeTab === 'wallet' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-                        <Wallet size={20} className={`mb-1 transition-transform ${activeTab === 'wallet' ? 'scale-110' : ''}`} />
-                        <span className="text-[10px] font-semibold tracking-wide">Mercado</span>
+                      <button onClick={() => setActiveTab('beneficios')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 relative ${activeTab === 'beneficios' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <Award size={20} className={`mb-1 transition-transform ${activeTab === 'beneficios' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">Benefícios</span>
                       </button>
 
                       <button onClick={() => setActiveTab('integracoes')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 relative ${activeTab === 'integracoes' ? 'text-[#a78f66]' : 'text-gray-500 hover:text-gray-300'}`}>
