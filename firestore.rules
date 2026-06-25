@@ -1,0 +1,87 @@
+rules_version = '2';
+
+// Regras do Firestore — brota-esg (Fase 1)
+// Princípio: o cliente LÊ; saldos de CAU (cauSaldo/saldo) e o ledger
+// NUNCA são escritos pelo cliente — isso fica para Cloud Functions (Fase 2).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function meuPerfil() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && meuPerfil().role == 'admin';
+    }
+    function donoDaEmpresa(empresaId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/empresas/$(empresaId)).data.ownerUid == request.auth.uid;
+    }
+
+    // Perfil/papel do usuário
+    match /usuarios/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      // Auto-cadastro: cria o próprio doc, papel limitado (nunca 'admin')
+      allow create: if isSignedIn() && request.auth.uid == uid
+        && request.resource.data.role in ['empresa', 'colaborador', 'produtor'];
+      // Não pode trocar o próprio papel nem a empresa; admin pode tudo
+      allow update: if isAdmin()
+        || (isSignedIn() && request.auth.uid == uid
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.empresaId == resource.data.empresaId);
+      allow delete: if isAdmin();
+    }
+
+    // Empresas patrocinadoras
+    match /empresas/{empresaId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      // cauSaldo é imutável pelo cliente (só Cloud Function altera)
+      allow update: if isAdmin()
+        || (donoDaEmpresa(empresaId)
+            && request.resource.data.cauSaldo == resource.data.cauSaldo);
+      allow delete: if isAdmin();
+
+      // Colaboradores da empresa
+      match /colaboradores/{colabId} {
+        allow read: if isSignedIn();
+        // A empresa dona cadastra e ajusta pontuação; o saldo (CAU) fica travado
+        allow create: if isAdmin()
+          || (donoDaEmpresa(empresaId) && request.resource.data.saldo == 0);
+        allow update: if isAdmin()
+          || (donoDaEmpresa(empresaId)
+              && request.resource.data.saldo == resource.data.saldo);
+        allow delete: if isAdmin() || donoDaEmpresa(empresaId);
+      }
+    }
+
+    // Catálogo de benefícios resgatáveis
+    match /catalogo/{itemId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Hortas (produtores)
+    match /hortas/{hortaId} {
+      allow read: if true; // catálogo público de hortas
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+    }
+
+    // Ledger imutável de CAU e resgates: leitura controlada,
+    // escrita EXCLUSIVA de Cloud Functions (Fase 2)
+    match /cauLedger/{txId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+    match /resgates/{resgateId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}
