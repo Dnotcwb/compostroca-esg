@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
         import L from 'leaflet';
+        import { useAuth } from './contexts/AuthContext';
+        import AuthScreen from './components/AuthScreen';
         import {
           LayoutDashboard,
           FileText,
@@ -520,8 +522,12 @@ import React, { useState, useEffect } from 'react';
 
         // --- APLICATIVO PRINCIPAL ---
         function App() {
-          const [user, setUser] = useState(null); 
-          const [activeTab, setActiveTab] = useState('visao-geral'); 
+          const { perfil, loading: authLoading, logout } = useAuth();
+          // `user` deriva do perfil real (Firestore). Mantém o shape que o resto do app já usa.
+          const user = perfil
+            ? { role: perfil.role, name: perfil.nome, empresa: perfil.empresaId || '', colaboradorId: perfil.uid }
+            : null;
+          const [activeTab, setActiveTab] = useState('visao-geral');
           const [dados, setDados] = useState(DADOS_INICIAIS);
           const [certificados, setCertificados] = useState(CERTIFICADOS_INICIAIS);
           
@@ -553,16 +559,16 @@ import React, { useState, useEffect } from 'react';
             return () => clearInterval(interval);
           }, []);
 
-          const handleLogin = (role, name, extra = {}) => {
-            setUser({ role, name, ...extra });
-            if (role === 'admin') setActiveTab('visao-geral');
-            else if (role === 'producer') setActiveTab('visao-horta');
-            else if (role === 'colaborador') setActiveTab('beneficios');
+          // Define a aba inicial conforme o papel quando o perfil real carrega.
+          useEffect(() => {
+            if (!perfil) return;
+            if (perfil.role === 'producer') setActiveTab('visao-horta');
+            else if (perfil.role === 'colaborador') setActiveTab('beneficios');
             else setActiveTab('visao-geral');
-          };
+          }, [perfil?.role]);
 
           const handleLogout = () => {
-            setUser(null);
+            logout();
           };
 
           const showNotificacao = (titulo, mensagem) => {
@@ -741,72 +747,16 @@ import React, { useState, useEffect } from 'react';
             );
           };
 
-          // --- TELA DE LOGIN ---
-          if (!user) {
+          // --- AUTENTICAÇÃO (Firebase) ---
+          if (authLoading) {
             return (
-              <div className="min-h-[100dvh] w-full flex items-center justify-center bg-[#050505] relative overflow-hidden">
-                <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-[#0e7a63] opacity-20 blur-[120px] rounded-full pointer-events-none"></div>
-                <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-[#a78f66] opacity-10 blur-[120px] rounded-full pointer-events-none"></div>
-
-                <div className="bg-[#111111] border border-[#2a2a2a] p-8 md:p-12 rounded-3xl w-[90%] max-w-md relative z-10 shadow-2xl animate-scale-up">
-                  <div className="flex flex-col items-center justify-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#0d332d] to-[#0e7a63] rounded-2xl flex items-center justify-center shadow-lg shadow-[#0e7a63]/20 mb-4">
-                      <Leaf size={32} className="text-white" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-white text-center" style={{ fontFamily: 'serif' }}>Ambiente Livre</h1>
-                    <p className="text-[#a78f66] text-xs uppercase tracking-widest font-bold mt-2">Plataforma Global ESG</p>
-                  </div>
-
-                  <p className="text-gray-400 text-sm text-center mb-8">Selecione o seu perfil de acesso para entrar no sistema.</p>
-
-                  <div className="space-y-4">
-                    <button onClick={() => handleLogin('admin', 'Administrador')} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#a78f66] rounded-xl transition-all group">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-[#a78f66]/20 rounded-lg text-[#a78f66]"><Lock size={20} /></div>
-                        <div className="text-left">
-                          <h3 className="text-white font-bold text-sm group-hover:text-[#a78f66] transition-colors">Acesso Admin</h3>
-                          <p className="text-[10px] text-gray-500">Gestão global e aprovações</p>
-                        </div>
-                      </div>
-                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#a78f66]" />
-                    </button>
-
-                    <button onClick={() => handleLogin('sponsor', 'TechCorp Solutions S.A.')} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#0e7a63] rounded-xl transition-all group">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-[#0e7a63]/20 rounded-lg text-[#0e7a63]"><Globe size={20} /></div>
-                        <div className="text-left">
-                          <h3 className="text-white font-bold text-sm group-hover:text-[#0e7a63] transition-colors">Empresa Patrocinadora</h3>
-                          <p className="text-[10px] text-gray-500">Dashboard ESG e Patrocínio</p>
-                        </div>
-                      </div>
-                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#0e7a63]" />
-                    </button>
-
-                    <button onClick={() => handleLogin('producer', 'Horta Comunitária Cajuru')} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#158d44] rounded-xl transition-all group">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-[#158d44]/20 rounded-lg text-[#158d44]"><Sprout size={20} /></div>
-                        <div className="text-left">
-                          <h3 className="text-white font-bold text-sm group-hover:text-[#158d44] transition-colors">Produtor / Horta</h3>
-                          <p className="text-[10px] text-gray-500">Lançamento de métricas locais</p>
-                        </div>
-                      </div>
-                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#158d44]" />
-                    </button>
-
-                    <button onClick={() => handleLogin('colaborador', 'Ana Souza', { colaboradorId: 1, empresa: 'TechCorp Solutions S.A.' })} className="w-full flex items-center justify-between p-4 bg-[#161616] border border-[#2a2a2a] hover:border-[#a78f66] rounded-xl transition-all group">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-[#a78f66]/20 rounded-lg text-[#a78f66]"><Smile size={20} /></div>
-                        <div className="text-left">
-                          <h3 className="text-white font-bold text-sm group-hover:text-[#a78f66] transition-colors">Colaborador</h3>
-                          <p className="text-[10px] text-gray-500">Resgate de benefícios CAU</p>
-                        </div>
-                      </div>
-                      <ArrowUpRight size={16} className="text-gray-600 group-hover:text-[#a78f66]" />
-                    </button>
-                  </div>
-                </div>
+              <div className="min-h-[100dvh] w-full flex items-center justify-center bg-[#050505]">
+                <div className="w-9 h-9 border-2 border-[#0e7a63] border-t-transparent rounded-full animate-spin"></div>
               </div>
             );
+          }
+          if (!user) {
+            return <AuthScreen />;
           }
 
           // --- ESTRUTURA DO DASHBOARD (LOGADO) ---

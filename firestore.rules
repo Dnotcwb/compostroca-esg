@@ -27,7 +27,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
       // Auto-cadastro: cria o próprio doc, papel limitado (nunca 'admin')
       allow create: if isSignedIn() && request.auth.uid == uid
-        && request.resource.data.role in ['empresa', 'colaborador', 'produtor'];
+        && request.resource.data.role in ['sponsor', 'colaborador', 'producer'];
       // Não pode trocar o próprio papel nem a empresa; admin pode tudo
       allow update: if isAdmin()
         || (isSignedIn() && request.auth.uid == uid
