@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
         import L from 'leaflet';
         import { useAuth } from './contexts/AuthContext';
         import AuthScreen from './components/AuthScreen';
+        import * as cau from './lib/cau';
         import {
           LayoutDashboard,
           FileText,
@@ -534,9 +535,25 @@ import React, { useState, useEffect } from 'react';
           // Estado de Usuários para CRUD
           const [usuariosLista, setUsuariosLista] = useState(USUARIOS_INICIAIS);
 
-          // Colaboradores da empresa + quantidade a distribuir por pontuação
-          const [colaboradores, setColaboradores] = useState(COLABORADORES_INICIAIS);
+          // Dados reais (Firestore) — empresa, colaboradores e o próprio colaborador
+          const [empresaDoc, setEmpresaDoc] = useState(null);
+          const [colaboradores, setColaboradores] = useState([]);
+          const [colabAtual, setColabAtual] = useState(null);
           const [qtdDistribuir, setQtdDistribuir] = useState('');
+          const cauSaldoEmpresa = (empresaDoc && empresaDoc.cauSaldo) || 0;
+
+          // Assinaturas em tempo real conforme o papel do usuário
+          useEffect(() => {
+            if (!perfil) return;
+            const unsubs = [];
+            if (perfil.role === 'sponsor' && perfil.empresaId) {
+              unsubs.push(cau.ouvirEmpresa(perfil.empresaId, setEmpresaDoc));
+              unsubs.push(cau.ouvirColaboradores(perfil.empresaId, setColaboradores));
+            } else if (perfil.role === 'colaborador' && perfil.empresaId) {
+              unsubs.push(cau.ouvirColaborador(perfil.empresaId, perfil.uid, setColabAtual));
+            }
+            return () => unsubs.forEach((u) => u && u());
+          }, [perfil?.role, perfil?.empresaId, perfil?.uid]);
           
           // Estados UI Modais
           const [modalAberto, setModalAberto] = useState(false);
@@ -614,85 +631,51 @@ import React, { useState, useEffect } from 'react';
              setUserEmEdicao(null);
           };
 
-          // Ações Negócio
-          const processarCompra = ({ quantidade, finalidade }) => {
+          // --- Ações de CAU (movimentação passa pelas Cloud Functions) ---
+          const processarCompra = async ({ quantidade }) => {
             setModalAberto(false);
-            setDados(prev => {
-              const novosDados = { ...prev };
-              if (finalidade === 'aposentar') {
-                novosDados.compensado += quantidade;
-              } else {
-                novosDados.tokensCustodia += quantidade;
-              }
-              novosDados.residuosDesviados += Math.floor(quantidade * 1.2); 
-              return novosDados;
-            });
-
-            if (finalidade === 'aposentar') {
-              const novoId = `CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-              const dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-              setCertificados(prev => [
-                { id: novoId, data: dataAtual, volume: quantidade, projeto: 'Cesta Net Zero', status: 'Aposentado', protocolo: 'GHG Protocol / B3' },
-                ...prev
-              ]);
+            try {
+              await cau.adquirirCau(perfil?.empresaId, quantidade);
+              showNotificacao('Patrocínio Confirmado', `${quantidade} CAU creditados à empresa.`);
+            } catch (e) {
+              showNotificacao('Não foi possível', e?.message || 'Falha ao creditar CAU.');
             }
-
-            showNotificacao('Patrocínio Confirmado', `${quantidade} CAU de patrocínio registrados.`);
           };
 
-          // Distribui CAU do patrocínio entre os colaboradores proporcionalmente à pontuação
-          const distribuirPorPontuacao = () => {
+          // Distribui CAU entre os colaboradores proporcionalmente à pontuação (Cloud Function)
+          const distribuirPorPontuacao = async () => {
              const qtd = parseInt(qtdDistribuir, 10);
              if (!qtd || qtd < 1) {
                 showNotificacao('Quantidade inválida', 'Informe quantos CAU deseja distribuir.');
                 return;
              }
-             if (qtd > (dados.tokensCustodia || 0)) {
-                showNotificacao('Saldo insuficiente', `Você possui apenas ${dados.tokensCustodia || 0} CAU para distribuir.`);
-                return;
+             try {
+                const r = await cau.distribuirCauPorPontuacao(qtd);
+                setQtdDistribuir('');
+                showNotificacao('Distribuição concluída', `${r.distribuido} CAU distribuídos entre ${r.colaboradores} colaboradores.`);
+             } catch (e) {
+                showNotificacao('Não foi possível distribuir', e?.message || 'Falha na distribuição.');
              }
-             const totalPontos = colaboradores.reduce((s, c) => s + (c.pontuacao || 0), 0);
-             if (totalPontos <= 0) {
-                showNotificacao('Sem pontuação', 'Os colaboradores não possuem pontuação registrada.');
-                return;
-             }
-             let distribuido = 0;
-             const novos = colaboradores.map(c => {
-                const aloc = Math.floor(qtd * (c.pontuacao || 0) / totalPontos);
-                distribuido += aloc;
-                return { ...c, saldo: (c.saldo || 0) + aloc };
-             });
-             setColaboradores(novos);
-             setDados(prev => ({ ...prev, tokensCustodia: (prev.tokensCustodia || 0) - distribuido }));
-             setQtdDistribuir('');
-             showNotificacao('Distribuição concluída', `${distribuido} CAU distribuídos entre ${colaboradores.length} colaboradores por pontuação.`);
           };
 
-          // Resgate de benefício pelo colaborador (debita o saldo do próprio colaborador)
-          const resgatarBeneficio = (item) => {
-             const colab = colaboradores.find(c => c.id === user.colaboradorId);
-             if (!colab || (colab.saldo || 0) < item.custo) {
-                showNotificacao('Saldo insuficiente', `São necessários ${item.custo} CAU para resgatar "${item.nome}".`);
-                return;
+          // Resgate de benefício pelo colaborador (Cloud Function — debita o saldo dele)
+          const resgatarBeneficio = async (item) => {
+             try {
+                await cau.resgatarBeneficio(item.id);
+                showNotificacao('Resgate solicitado', `"${item.nome}" resgatado por ${item.custo} CAU.`);
+             } catch (e) {
+                showNotificacao('Não foi possível resgatar', e?.message || 'Falha no resgate.');
              }
-             setColaboradores(prev => prev.map(c => c.id === user.colaboradorId ? { ...c, saldo: c.saldo - item.custo } : c));
-             showNotificacao('Resgate solicitado', `"${item.nome}" resgatado por ${item.custo} CAU.`);
           };
 
           const darRecompensa = (nome) => {
-             if(dados.tokensCustodia < 1) {
-                showNotificacao('Saldo Insuficiente', `Precisa ter CAU de patrocínio disponíveis para recompensar.`);
-                return;
-             }
-             setDados(prev => ({ ...prev, tokensCustodia: prev.tokensCustodia - 1 }));
-             showNotificacao('Recompensa Enviada!', `1 CAU enviado como benefício para ${nome}.`);
+             showNotificacao('Use a distribuição', `Para premiar ${nome}, ajuste a pontuação e use "Distribuir por pontuação".`);
           };
 
           const gerarRelatorioGlobal = () => {
              showNotificacao('Relatório em Consolidação', 'O relatório oficial GRI/ISE está a ser gerado para auditoria. Irá recebê-lo por e-mail.');
           };
 
-          const colabAtual = (user && user.role === 'colaborador') ? colaboradores.find(c => c.id === user.colaboradorId) : null;
           const compensadoLiquido = Math.max(0, dados.compensado - (dados.cancelamentos || 0));
           const saldoDevedorLiquido = Math.max(0, dados.emissoesTotais - compensadoLiquido);
 
@@ -1048,7 +1031,7 @@ import React, { useState, useEffect } from 'react';
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
                           <MetricCard title="Compensado Líquido" value={`${compensadoLiquido} t`} subtitle="Volume tCO₂e (Bruto - Cancelados)" icon={Leaf} />
                           <MetricCard title="Desviados" value={`${dados.residuosDesviados || 0} t`} subtitle="Resíduo orgânico" icon={TrendingUp} accentColor="text-[#a78f66]" />
-                          <MetricCard title="Tokens CAU" value={dados.tokensCustodia || 0} subtitle="De patrocínio ativo" icon={Award} accentColor="text-white" highlight={true} />
+                          <MetricCard title="Tokens CAU" value={cauSaldoEmpresa} subtitle="De patrocínio ativo" icon={Award} accentColor="text-white" highlight={true} />
                           <MetricCard title="Logística Reversa" value={`${dados.logisticaReversa?.recuperadas || 0} t`} subtitle={`de ${dados.logisticaReversa?.inseridas || 0} t inseridas`} icon={Recycle} accentColor="text-[#158d44]" />
                         </div>
 
@@ -1551,7 +1534,7 @@ import React, { useState, useEffect } from 'react';
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                            <div className="space-y-6">
-                              <MetricCard title="Saldo para Recompensas" value={`${dados.tokensCustodia || 0}`} subtitle="CAU disponíveis p/ resgate" icon={Award} accentColor="text-[#a78f66]" />
+                              <MetricCard title="Saldo para Recompensas" value={`${cauSaldoEmpresa}`} subtitle="CAU disponíveis p/ distribuir" icon={Award} accentColor="text-[#a78f66]" />
                               
                               <div className="bg-[#111111] border border-[#2a2a2a] p-5 rounded-2xl flex flex-col items-center text-center">
                                  <div className="w-12 h-12 rounded-full bg-[#158d44]/20 flex items-center justify-center mb-3">
@@ -1729,6 +1712,10 @@ import React, { useState, useEffect } from 'react';
                           <div>
                             <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Distribuição de CAU</h2>
                             <p className="text-gray-400 text-xs md:text-sm max-w-2xl">Distribua os CAU adquiridos no patrocínio entre os colaboradores, proporcionalmente à pontuação de cada um. O resgate dos benefícios acontece no perfil de cada colaborador. Os tokens não são comercializáveis.</p>
+                            <div className="mt-2 inline-flex items-center gap-2 text-[11px] bg-[#161616] border border-[#2a2a2a] rounded-lg px-3 py-1.5">
+                              <span className="text-gray-500">Código da empresa:</span>
+                              <code className="text-[#a78f66] font-mono">{perfil?.empresaId}</code>
+                            </div>
                           </div>
                           <button onClick={() => setModalAberto(true)} className="bg-[#0e7a63] hover:bg-[#158d44] text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center transition-all shadow-lg active:scale-95 whitespace-nowrap">
                             <Plus size={16} className="mr-2" /> Patrocinar (Adicionar CAU)
@@ -1744,7 +1731,7 @@ import React, { useState, useEffect } from 'react';
                               </div>
                               <div>
                                 <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">CAU adquiridos (disponíveis)</p>
-                                <p className="text-2xl md:text-3xl font-bold text-white">{dados.tokensCustodia || 0} <span className="text-base font-medium text-gray-400">CAU</span></p>
+                                <p className="text-2xl md:text-3xl font-bold text-white">{cauSaldoEmpresa} <span className="text-base font-medium text-gray-400">CAU</span></p>
                               </div>
                             </div>
                             <span className="hidden sm:inline text-[10px] text-[#158d44] bg-[#158d44]/10 border border-[#158d44]/20 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider">Não comercializável</span>
@@ -1783,16 +1770,33 @@ import React, { useState, useEffect } from 'react';
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-[#1a1a1a]">
+                                {colaboradores.length === 0 && (
+                                  <tr><td colSpan={5} className="p-8 text-center text-sm text-gray-500">Nenhum colaborador ainda. Compartilhe o <span className="text-[#a78f66] font-bold">código da empresa</span> (acima) para que eles se cadastrem.</td></tr>
+                                )}
                                 {(() => { const totalPts = colaboradores.reduce((s, c) => s + (c.pontuacao || 0), 0) || 1; return colaboradores.map((c) => (
                                   <tr key={c.id} className="hover:bg-[#161616] transition-colors">
                                     <td className="p-4 font-medium text-white">
                                       <div className="flex items-center">
-                                        <div className="w-8 h-8 rounded-full bg-[#a78f66]/20 text-[#a78f66] flex items-center justify-center mr-3 text-xs font-bold flex-shrink-0">{c.nome.charAt(0)}</div>
+                                        <div className="w-8 h-8 rounded-full bg-[#a78f66]/20 text-[#a78f66] flex items-center justify-center mr-3 text-xs font-bold flex-shrink-0">{(c.nome || '?').charAt(0)}</div>
                                         {c.nome}
                                       </div>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-400">{c.cargo}</td>
-                                    <td className="p-4 text-sm text-white font-bold text-center">{c.pontuacao}</td>
+                                    <td className="p-4 text-sm text-gray-400">{c.cargo || '—'}</td>
+                                    <td className="p-4 text-center">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        defaultValue={c.pontuacao || 0}
+                                        onBlur={(e) => {
+                                          const v = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                          if (v !== (c.pontuacao || 0)) {
+                                            cau.atualizarPontuacao(perfil.empresaId, c.id, v)
+                                              .catch(() => showNotificacao('Erro', 'Não foi possível salvar a pontuação.'));
+                                          }
+                                        }}
+                                        className="w-20 bg-[#161616] border border-[#333] text-white text-center font-bold rounded-lg py-1.5 text-sm focus:outline-none focus:border-[#0e7a63]"
+                                      />
+                                    </td>
                                     <td className="p-4 text-xs text-gray-400 text-center">{Math.round((c.pontuacao || 0) / totalPts * 100)}%</td>
                                     <td className="p-4 text-right"><span className="text-sm font-bold text-[#158d44]">{c.saldo || 0} CAU</span></td>
                                   </tr>
@@ -1830,12 +1834,12 @@ import React, { useState, useEffect } from 'react';
                         {/* CATÁLOGO DE RESGATE */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {[
-                            { nome: 'Cesta de Orgânicos da Horta', categoria: 'Produtos das Hortas', custo: 8, Icone: Sprout, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
-                            { nome: 'Kit de Mudas e Adubo', categoria: 'Produtos das Hortas', custo: 5, Icone: Leaf, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
-                            { nome: 'Vale-Compras Ambiente Livre', categoria: 'Loja Ambiente Livre', custo: 10, Icone: Tags, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
-                            { nome: 'Composteira Doméstica', categoria: 'Loja Ambiente Livre', custo: 20, Icone: Recycle, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
-                            { nome: 'Day-off (Folga Remunerada)', categoria: 'Gratificações da Empresa', custo: 30, Icone: Smile, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
-                            { nome: 'Saída Antecipada', categoria: 'Gratificações da Empresa', custo: 12, Icone: HeartHandshake, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
+                            { id: 'cesta', nome: 'Cesta de Orgânicos da Horta', categoria: 'Produtos das Hortas', custo: 8, Icone: Sprout, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
+                            { id: 'mudas', nome: 'Kit de Mudas e Adubo', categoria: 'Produtos das Hortas', custo: 5, Icone: Leaf, cor: 'text-[#158d44]', bg: 'bg-[#158d44]/15' },
+                            { id: 'vale', nome: 'Vale-Compras Ambiente Livre', categoria: 'Loja Ambiente Livre', custo: 10, Icone: Tags, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
+                            { id: 'composteira', nome: 'Composteira Doméstica', categoria: 'Loja Ambiente Livre', custo: 20, Icone: Recycle, cor: 'text-[#a78f66]', bg: 'bg-[#a78f66]/15' },
+                            { id: 'dayoff', nome: 'Day-off (Folga Remunerada)', categoria: 'Gratificações da Empresa', custo: 30, Icone: Smile, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
+                            { id: 'saida', nome: 'Saída Antecipada', categoria: 'Gratificações da Empresa', custo: 12, Icone: HeartHandshake, cor: 'text-blue-400', bg: 'bg-blue-500/15' },
                           ].map((item, idx) => (
                             <div key={idx} className="bg-[#111111] border border-[#2a2a2a] rounded-2xl p-5 flex flex-col">
                               <div className="flex items-center justify-between mb-3">

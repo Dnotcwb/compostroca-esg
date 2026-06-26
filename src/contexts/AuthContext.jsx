@@ -58,6 +58,16 @@ export function AuthProvider({ children }) {
       await setDoc(doc(db, 'usuarios', uid), { ...base, empresaId: uid });
     } else if (role === 'colaborador') {
       await setDoc(doc(db, 'usuarios', uid), { ...base, empresaId: empresaId || null });
+      // vínculo do colaborador com a empresa (recebe/gasta CAU aqui; saldo travado por regra)
+      if (empresaId) {
+        await setDoc(doc(db, 'empresas', empresaId, 'colaboradores', uid), {
+          nome,
+          cargo: '',
+          pontuacao: 0,
+          saldo: 0,
+          criadoEm: serverTimestamp(),
+        });
+      }
     } else if (role === 'producer') {
       await setDoc(doc(db, 'hortas', uid), {
         nome,

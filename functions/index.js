@@ -44,13 +44,20 @@ exports.adquirirCau = onCall({ region: REGION }, async (req) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Faça login.');
 
   const perfil = await getPerfil(uid);
-  if (!perfil || perfil.role !== 'admin') {
-    throw new HttpsError('permission-denied', 'Apenas a plataforma pode creditar CAU.');
+  // Admin credita qualquer empresa; a própria empresa (sponsor) credita a si mesma.
+  // OBS: enquanto não houver pagamento (Stripe), o sponsor "adquire" livremente —
+  // isto é um STUB. Na integração de pagamento, o crédito virá só do webhook.
+  let empresaId;
+  if (perfil && perfil.role === 'admin') {
+    empresaId = String(req.data && req.data.empresaId || '');
+    if (!empresaId) throw new HttpsError('invalid-argument', 'Informe a empresa.');
+  } else if (perfil && perfil.role === 'sponsor' && perfil.empresaId) {
+    empresaId = perfil.empresaId;
+  } else {
+    throw new HttpsError('permission-denied', 'Sem permissão para creditar CAU.');
   }
 
-  const empresaId = String(req.data && req.data.empresaId || '');
   const qtd = Math.floor(Number(req.data && req.data.qtd));
-  if (!empresaId) throw new HttpsError('invalid-argument', 'Informe a empresa.');
   if (!qtd || qtd < 1) throw new HttpsError('invalid-argument', 'Quantidade inválida.');
 
   const empRef = db.doc(`empresas/${empresaId}`);

@@ -49,9 +49,13 @@ service cloud.firestore {
       // Colaboradores da empresa
       match /colaboradores/{colabId} {
         allow read: if isSignedIn();
-        // A empresa dona cadastra e ajusta pontuação; o saldo (CAU) fica travado
+        // A empresa dona cadastra e ajusta pontuação; o saldo (CAU) fica travado.
+        // O próprio colaborador também pode criar seu vínculo (saldo e pontuação zerados).
         allow create: if isAdmin()
-          || (donoDaEmpresa(empresaId) && request.resource.data.saldo == 0);
+          || (donoDaEmpresa(empresaId) && request.resource.data.saldo == 0)
+          || (request.auth.uid == colabId
+              && request.resource.data.saldo == 0
+              && request.resource.data.pontuacao == 0);
         allow update: if isAdmin()
           || (donoDaEmpresa(empresaId)
               && request.resource.data.saldo == resource.data.saldo);
