@@ -1712,9 +1712,19 @@ import React, { useState, useEffect } from 'react';
                     {/* RELATÓRIO POWER BI (Empresa e Admin) — embed do "Publicar na web" */}
                     {activeTab === 'relatorio-bi' && (user.role === 'sponsor' || user.role === 'admin') && (
                       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="mb-6">
-                          <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Relatório de Indicadores</h2>
-                          <p className="text-gray-400 text-xs md:text-sm max-w-2xl">Painel ESG ao vivo, incorporado do Power BI. Atualiza conforme o relatório de origem.</p>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-6">
+                          <div>
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Relatório de Indicadores</h2>
+                            <p className="text-gray-400 text-xs md:text-sm max-w-2xl">Painel ESG ao vivo, incorporado do Power BI.</p>
+                          </div>
+                          <a
+                            href="https://app.powerbi.com/view?r=eyJrIjoiOWY4NjY5OTctZTIwYS00YTg3LTllMzItM2UzNzViYmZiZDkyIiwidCI6IjU3NWNkYTA5LTg5OWYtNDJmMy04NGM1LWRmOGQ2YzZmMzM5YSJ9&pageName=ReportSectioncc0e4823ee1a05b88698"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-[#1a1a1a] border border-[#333] hover:border-[#0e7a63] text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center transition-all whitespace-nowrap active:scale-95"
+                          >
+                            <ExternalLink size={16} className="mr-2 text-[#a78f66]" /> Abrir em nova aba
+                          </a>
                         </div>
                         <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-lg">
                           <iframe
@@ -1723,9 +1733,13 @@ import React, { useState, useEffect } from 'react';
                             className="w-full border-0 block"
                             style={{ height: '78vh', minHeight: '520px' }}
                             allowFullScreen
+                            loading="eager"
+                            referrerPolicy="strict-origin-when-cross-origin"
                           ></iframe>
                         </div>
-                        <p className="text-[11px] text-gray-600 mt-4 text-center">Fonte: Power BI (Publicar na web). Para trazer os números para dentro do app, é necessário ligar à origem dos dados.</p>
+                        <p className="text-[11px] text-gray-600 mt-4 text-center max-w-2xl mx-auto">
+                          Não apareceu o relatório acima? Seu navegador pode estar bloqueando conteúdo de terceiros (cookies). Use <span className="text-[#a78f66]">"Abrir em nova aba"</span> ou libere cookies de terceiros para <code>powerbi.com</code>.
+                        </p>
                       </div>
                     )}
 
