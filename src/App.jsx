@@ -848,6 +848,10 @@ import React, { useState, useEffect } from 'react';
                         <Globe size={18} />
                         <span>Impacto Duplo & ODS</span>
                       </button>
+                      <button onClick={() => setActiveTab('relatorio-bi')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'relatorio-bi' ? 'bg-[#111111] text-[#0e7a63] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
+                        <BarChart3 size={18} />
+                        <span>Relatório (Power BI)</span>
+                      </button>
 
                       <div className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 mt-4 px-4">Social (S)</div>
                       <button onClick={() => setActiveTab('social')} className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${activeTab === 'social' ? 'bg-[#111111] text-[#158d44] border border-[#2a2a2a] shadow-sm' : 'text-gray-400 hover:text-gray-200 hover:bg-[#111111] border border-transparent'}`}>
@@ -1705,6 +1709,26 @@ import React, { useState, useEffect } from 'react';
                       </div>
                     )}
 
+                    {/* RELATÓRIO POWER BI (Empresa e Admin) — embed do "Publicar na web" */}
+                    {activeTab === 'relatorio-bi' && (user.role === 'sponsor' || user.role === 'admin') && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="mb-6">
+                          <h2 className="text-xl md:text-2xl font-bold text-white mb-1">Relatório de Indicadores</h2>
+                          <p className="text-gray-400 text-xs md:text-sm max-w-2xl">Painel ESG ao vivo, incorporado do Power BI. Atualiza conforme o relatório de origem.</p>
+                        </div>
+                        <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-lg">
+                          <iframe
+                            title="Relatório ESG — Power BI"
+                            src="https://app.powerbi.com/view?r=eyJrIjoiOWY4NjY5OTctZTIwYS00YTg3LTllMzItM2UzNzViYmZiZDkyIiwidCI6IjU3NWNkYTA5LTg5OWYtNDJmMy04NGM1LWRmOGQ2YzZmMzM5YSJ9&pageName=ReportSectioncc0e4823ee1a05b88698"
+                            className="w-full border-0 block"
+                            style={{ height: '78vh', minHeight: '520px' }}
+                            allowFullScreen
+                          ></iframe>
+                        </div>
+                        <p className="text-[11px] text-gray-600 mt-4 text-center">Fonte: Power BI (Publicar na web). Para trazer os números para dentro do app, é necessário ligar à origem dos dados.</p>
+                      </div>
+                    )}
+
                     {/* BENEFÍCIOS CAU — DISTRIBUIÇÃO (Empresa Patrocinadora e Admin) */}
                     {activeTab === 'beneficios' && (user.role === 'sponsor' || user.role === 'admin') && (
                       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1913,7 +1937,12 @@ import React, { useState, useEffect } from 'react';
                         <Globe size={20} className={`mb-1 transition-transform ${activeTab === 'impacto-duplo' ? 'scale-110' : ''}`} />
                         <span className="text-[10px] font-semibold tracking-wide">ODS</span>
                       </button>
-                      
+
+                      <button onClick={() => setActiveTab('relatorio-bi')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'relatorio-bi' ? 'text-[#0e7a63]' : 'text-gray-500 hover:text-gray-300'}`}>
+                        <BarChart3 size={20} className={`mb-1 transition-transform ${activeTab === 'relatorio-bi' ? 'scale-110' : ''}`} />
+                        <span className="text-[10px] font-semibold tracking-wide">BI</span>
+                      </button>
+
                       <button onClick={() => setActiveTab('social')} className={`flex flex-col items-center justify-center min-w-[72px] flex-shrink-0 px-1 py-1 transition-all rounded-lg snap-center active:bg-white/5 ${activeTab === 'social' ? 'text-[#158d44]' : 'text-gray-500 hover:text-gray-300'}`}>
                         <HeartHandshake size={20} className={`mb-1 transition-transform ${activeTab === 'social' ? 'scale-110' : ''}`} />
                         <span className="text-[10px] font-semibold tracking-wide">Social</span>
